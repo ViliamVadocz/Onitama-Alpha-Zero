@@ -28,6 +28,7 @@ fn main() {
     println!("{:.2}", c);
     // println!("{:.2}", c.reshape::<2, 10>());
     // println!("{:.2}", c.transpose());
+    // println!("{:.2}", c.convolve(b))
 
-    println!("{:.2}", c.convolve(b))
+    println!("{:.2}", a.matmul(c).matmul(c.transpose()).matmul(a).scale(0.0001).convolve(b));
 }

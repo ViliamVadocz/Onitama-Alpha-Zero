@@ -164,6 +164,23 @@ where
         res
     }
 
+    /// Naive matrix multiplication.
+    pub fn matmul<const K: usize>(self, other: Matrix<C, K>) -> Matrix<R, K>
+    where
+        [(); C * K]: ,
+        [(); R * K]: ,
+    {
+        let mut data = [0.0; R * K];
+        for (i, row) in self.rows().enumerate() {
+            for (j, col) in other.cols().enumerate() {
+                data[i * K + j] = row.iter().zip(col.iter()).map(|(&a, &b)| a * b).sum();
+            }
+        }
+        Matrix::new(data)
+    }
+}
+
+
 // Iterators for rows and columns.
 pub struct Rows<'a, const R: usize, const C: usize> {
     data: &'a [f64],
