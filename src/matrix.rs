@@ -1,5 +1,6 @@
 use std::fmt;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+use rand::{thread_rng, distributions::Distribution};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Matrix<const R: usize, const C: usize>([f64; R * C])
@@ -25,6 +26,16 @@ where
 {
     pub fn new(data: [f64; R * C]) -> Self {
         Self(data)
+    }
+
+    /// Initialize a random matrix.
+    pub fn rand<D: Distribution<f64>>(distr: D) -> Self {
+        let mut rng = thread_rng();
+        let mut data = [0.0; R * C];
+        for elem in data.iter_mut() {
+            *elem = distr.sample(&mut rng);
+        }
+        Matrix::new(data)
     }
 
     /// Multiply all elements in the matrix by a scalar.

@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 onitama_move_gen  = { git = "https://github.com/LHolten/onitama" }
+rand = "0.8.3"
