@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{convert::TryInto, fmt};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 use rand::{thread_rng, distributions::Distribution};
 
@@ -162,6 +162,58 @@ where
             res += self.slice_with_pad(r, c).scale(elem)
         }
         res
+    }
+
+// Iterators for rows and columns.
+pub struct Rows<'a, const R: usize, const C: usize> {
+    data: &'a [f64],
+    row: usize,
+}
+
+impl<'a, const R: usize, const C: usize> Iterator for Rows<'a, R, C> {
+    type Item = [f64; C];
+
+    fn next(&mut self) -> Option<[f64; C]> {
+        if self.row >= R {
+            return None;
+        }
+        let next = self.data[(self.row * C) .. ((self.row + 1) * C)].try_into().unwrap();
+        self.row += 1;
+        Some(next)
+    }
+}
+
+pub struct Cols<'a, const R: usize, const C: usize> {
+    data: &'a [f64],
+    col: usize,
+}
+
+impl<'a, const R: usize, const C: usize> Iterator for Cols<'a, R, C> {
+    type Item = [f64; R];
+
+    fn next(&mut self) -> Option<[f64; R]> {
+        if self.col >= C {
+            return None;
+        }
+        let mut next = [0.0; R];
+        for (row, elem) in next.iter_mut().enumerate() {
+            *elem = self.data[row * C + self.col]
+        }
+        self.col += 1;
+        Some(next)
+    }
+}
+
+impl<const R: usize, const C: usize> Matrix<R, C>
+where
+    [(); R * C]: ,
+{
+    pub fn rows<'a>(&'a self) -> Rows<'a, R, C> {
+        Rows { data: &self.0, row: 0 }
+    }
+
+    pub fn cols<'a>(&'a self) -> Cols<'a, R, C> {
+        Cols { data: &self.0, col: 0 }
     }
 }
 
