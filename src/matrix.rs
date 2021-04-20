@@ -38,6 +38,33 @@ where
         Matrix::new(data)
     }
 
+    /// Change the shape of the matrix, keeping the elements in the same order.
+    pub fn reshape<const NEW_R: usize, const NEW_C: usize>(self) -> Matrix<NEW_R, NEW_C>
+    where
+        [(); NEW_R * NEW_C]: ,
+    {
+        assert_eq!(NEW_R * NEW_C, R * C);
+        let mut data = [0.0; NEW_R * NEW_C];
+        for (elem, &val) in data.iter_mut().zip(self.0.iter()) {
+            *elem = val;
+        }
+        Matrix::new(data)
+    }
+
+    /// Get the transpose of a matrix.
+    pub fn transpose(self) -> Matrix<C, R> 
+    where
+        [(); C * R]: ,
+    {
+        let mut data = [0.0; C * R];
+        for (i, elem) in data.iter_mut().enumerate() {
+            let r = i % R;
+            let c = i / R;
+            *elem = self.0[r * C + c];
+        }
+        Matrix::new(data)
+    }
+
     /// Multiply all elements in the matrix by a scalar.
     pub fn scale(mut self, scalar: f64) -> Self {
         for elem in self.0.iter_mut() {
@@ -59,7 +86,7 @@ where
         assert!(col_offset + NEW_C <= C);
         let mut data = [0.0; NEW_R * NEW_C];
         for (i, elem) in data.iter_mut().enumerate() {
-            let r = i / NEW_R + row_offset;
+            let r = i / NEW_C + row_offset;
             let c = i % NEW_C + col_offset;
             *elem = self.0[r * C + c];
         }
@@ -78,11 +105,11 @@ where
         [(); NEW_R * NEW_C]: ,
     {
         let mut data = [0.0; NEW_R * NEW_C];
-        let new_r = NEW_R as isize;
+        // let new_r = NEW_R as isize;
         let new_c = NEW_C as isize;
         for (i, elem) in data.iter_mut().enumerate() {
             let i = i as isize;
-            let r = i / new_r + row_offset;
+            let r = i / new_c + row_offset;
             let c = i % new_c + col_offset;
             if r < 0 || c < 0 {
                 continue;
@@ -108,7 +135,7 @@ where
     {
         let mut res = Matrix::new([0.0; (R + 1 - KERN_R) * (C + 1 - KERN_C)]);
         for (i, &elem) in kernel.0.iter().enumerate() {
-            let r = i / KERN_R;
+            let r = i / KERN_C;
             let c = i % KERN_C;
             res += self.slice(r, c).scale(elem)
         }
@@ -130,7 +157,7 @@ where
         let kern_c = KERN_C as isize;
         for (i, &elem) in kernel.0.iter().enumerate() {
             let i = i as isize;
-            let r = i / kern_r - kern_r / 2;
+            let r = i / kern_c - kern_r / 2;
             let c = i % kern_c - kern_c / 2;
             res += self.slice_with_pad(r, c).scale(elem)
         }

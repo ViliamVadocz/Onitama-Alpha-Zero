@@ -9,3 +9,8 @@ edition = "2018"
 [dependencies]
 onitama_move_gen  = { git = "https://github.com/LHolten/onitama" }
 rand = "0.8.3"
+
+# ndarray = { version = "0.15.1", features = ["rayon"] }
+# ndarray-rand = "0.14.0"
+# realfft = "2.0.0"
+# rustfft = "6.0.0"
