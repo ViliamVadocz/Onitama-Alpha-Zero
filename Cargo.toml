@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 onitama_move_gen  = { git = "https://github.com/LHolten/onitama" }
+tensor = { path = "./tensor" }
 rand = "0.8.3"
 
 # ndarray = { version = "0.15.1", features = ["rayon"] }
