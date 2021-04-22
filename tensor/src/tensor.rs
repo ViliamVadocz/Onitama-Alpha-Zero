@@ -1,16 +1,13 @@
-
 pub mod elementwise;
 #[cfg(feature = "rand")]
 pub mod random;
 
-use std::fmt::{self, Display, Debug};
+use std::fmt::{self, Debug, Display};
 
 pub type Vector<T, const L: usize> = Tensor1<T, L>;
 pub type Matrix<T, const R: usize, const C: usize> = Tensor2<T, R, C>;
 
-pub trait Tensor<T, const X: usize>:
-    Default
-    + Display
+pub trait Tensor<T, const X: usize>: Default + Display
 where
     T: Default + Copy + Debug,
 {

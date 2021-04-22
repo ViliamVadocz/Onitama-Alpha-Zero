@@ -16,11 +16,16 @@ where
     }
 }
 
-impl<T, const L: usize> RandomTensor<T, L> for Tensor1<T, L>
-where T: Default + Copy + Debug {}
+impl<T, const L: usize> RandomTensor<T, L> for Tensor1<T, L> where T: Default + Copy + Debug {}
 
-impl<T, const R: usize, const C: usize> RandomTensor<T, {R * C}> for Tensor2<T, R, C>
-where T: Default + Copy + Debug {}
+impl<T, const R: usize, const C: usize> RandomTensor<T, { R * C }> for Tensor2<T, R, C> where
+    T: Default + Copy + Debug
+{
+}
 
-impl<T, const D1: usize, const D2: usize, const D3: usize> RandomTensor<T, {D1 * D2 * D3}> for Tensor3<T, D1, D2, D3>
-where T: Default + Copy + Debug {}
+impl<T, const D1: usize, const D2: usize, const D3: usize> RandomTensor<T, { D1 * D2 * D3 }>
+    for Tensor3<T, D1, D2, D3>
+where
+    T: Default + Copy + Debug,
+{
+}
