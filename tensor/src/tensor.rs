@@ -1,24 +1,22 @@
+
+pub mod elementwise;
+#[cfg(feature = "rand")]
+pub mod random;
+
 use std::fmt::{self, Display, Debug};
-// use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 pub type Vector<T, const L: usize> = Tensor1<T, L>;
 pub type Matrix<T, const R: usize, const C: usize> = Tensor2<T, R, C>;
 
-trait Tensor<T, const X: usize>:
+pub trait Tensor<T, const X: usize>:
     Default
     + Display
-// + Add<[T; X]>
-// + Mul<[T; X]>
-// + Sub<[T; X]>
-// + Div<[T; X]>
-// + AddAssign<[T; X]>
-// + DivAssign<[T; X]>
-// + MulAssign<[T; X]>
-// + SubAssign<[T; X]>
 where
     T: Default + Copy + Debug,
 {
     fn new(data: [T; X]) -> Self;
+    fn get_data(self) -> [T; X];
+    fn get_data_mut(&mut self) -> &mut [T; X];
     // fn reshape<G: Tensor<T, X>>(self) -> G;
 }
 
@@ -53,11 +51,18 @@ where
         Tensor1(data)
     }
 
+    fn get_data(self) -> [T; L] {
+        self.0
+    }
+
+    fn get_data_mut(&mut self) -> &mut [T; L] {
+        &mut self.0
+    }
+
     // fn reshape<G: Tensor<T, L>>(self) -> G {
     //     G::new(self.0)
     // }
 }
-
 ////////////////////////////////////////////////////////////////////////////////
 #[derive(Clone, Copy, Debug)]
 pub struct Tensor2<T, const R: usize, const C: usize>([T; R * C])
@@ -96,6 +101,14 @@ where
 {
     fn new(data: [T; R * C]) -> Self {
         Tensor2(data)
+    }
+
+    fn get_data(self) -> [T; R * C] {
+        self.0
+    }
+
+    fn get_data_mut(&mut self) -> &mut [T; R * C] {
+        &mut self.0
     }
 
     // fn reshape<G: Tensor<T, { R * C }>>(self) -> G {
@@ -148,6 +161,14 @@ where
 {
     fn new(data: [T; D1 * D2 * D3]) -> Self {
         Tensor3(data)
+    }
+
+    fn get_data(self) -> [T; D1 * D2 * D3] {
+        self.0
+    }
+
+    fn get_data_mut(&mut self) -> &mut [T; D1 * D2 * D3] {
+        &mut self.0
     }
 
     // fn reshape<G: Tensor<T, { D1 * D2 * D3 }>>(self) -> G {
