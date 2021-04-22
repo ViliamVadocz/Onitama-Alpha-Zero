@@ -8,7 +8,8 @@ where
 {
     /// Multiply all elements by a scalar.
     fn scale(mut self, scalar: T) -> Self
-    where T: MulAssign
+    where
+        T: MulAssign,
     {
         for elem in self.get_data_mut().iter_mut() {
             *elem *= scalar;
@@ -17,20 +18,31 @@ where
     }
 }
 
-impl<T, const L: usize> ElementWiseTensor<T, L> for Tensor1<T, L>
-where T: Default + Copy + Debug {}
+impl<T, const L: usize> ElementWiseTensor<T, L> for Tensor1<T, L> where T: Default + Copy + Debug {}
 
-impl<T, const R: usize, const C: usize> ElementWiseTensor<T, {R * C}> for Tensor2<T, R, C>
-where T: Default + Copy + Debug {}
+impl<T, const R: usize, const C: usize> ElementWiseTensor<T, { R * C }> for Tensor2<T, R, C> where
+    T: Default + Copy + Debug
+{
+}
 
-impl<T, const D1: usize, const D2: usize, const D3: usize> ElementWiseTensor<T, {D1 * D2 * D3}> for Tensor3<T, D1, D2, D3>
-where T: Default + Copy + Debug {}
+impl<T, const D1: usize, const D2: usize, const D3: usize> ElementWiseTensor<T, { D1 * D2 * D3 }>
+    for Tensor3<T, D1, D2, D3>
+where
+    T: Default + Copy + Debug,
+{
+}
 
-macro_rules! impl_op_1 {
-    ($bound:ident, $method:ident) => {
-        impl<T, const L: usize> $bound for Tensor1<T, L>
+// Define macros to help implement all elementwise operation traits.
+macro_rules! impl_op_inner {
+    (
+        impl[$($generics:tt)*] $bound:ident for $type:ty
+        $( where($($predicates:tt)*) )?
+        {$method:ident}
+    ) => {
+        impl<T, $($generics)*> $bound for $type
         where
             T: Default + Copy + Debug + $bound<Output = T>,
+            $($($predicates)*)?
         {
             type Output = Self;
 
@@ -41,19 +53,34 @@ macro_rules! impl_op_1 {
                 self
             }
         }
-    };
+    }
 }
 
-macro_rules! impl_op_assign_1 {
-    ($bound:ident, $method:ident) => {
-        impl<T, const L: usize> $bound for Tensor1<T, L>
+macro_rules! impl_op_assign_inner {
+    (
+        impl[$($generics:tt)*] $bound:ident for $type:ty
+        $( where($($predicates:tt)*) )?
+        {$method:ident}
+    ) => {
+        impl<T, $($generics)*> $bound for $type
         where
             T: Default + Copy + Debug + $bound,
+            $($($predicates)*)?
         {
             fn $method(&mut self, other: Self) {
                 for (elem, &val) in self.0.iter_mut().zip(other.0.iter()) {
                     $bound::$method(elem, val);
                 }
+            }
+        }
+    }
+}
+
+macro_rules! impl_op_1 {
+    ($bound:ident, $method:ident) => {
+        impl_op_inner! {
+            impl[const L: usize] $bound for Tensor1<T, L> {
+                $method
             }
         }
     };
@@ -61,70 +88,50 @@ macro_rules! impl_op_assign_1 {
 
 macro_rules! impl_op_2 {
     ($bound:ident, $method:ident) => {
-        impl<T, const R: usize, const C: usize> $bound for Tensor2<T, R, C>
-        where
-            T: Default + Copy + Debug + $bound<Output = T>,
-            [(); R * C]: ,
-        {
-            type Output = Self;
-
-            fn $method(mut self, other: Self) -> Self {
-                for (elem, &val) in self.0.iter_mut().zip(other.0.iter()) {
-                    *elem = $bound::$method(*elem, val);
-                }
-                self
-            }
-        }
-    };
-}
-
-macro_rules! impl_op_assign_2 {
-    ($bound:ident, $method:ident) => {
-        impl<T, const R: usize, const C: usize> $bound for Tensor2<T, R, C>
-        where
-            T: Default + Copy + Debug + $bound,
-            [(); R * C]: ,
-        {
-            fn $method(&mut self, other: Self) {
-                for (elem, &val) in self.0.iter_mut().zip(other.0.iter()) {
-                    $bound::$method(elem, val);
-                }
-            }
+        impl_op_inner! {
+            impl[const R: usize, const C: usize] $bound for Tensor2<T, R, C>
+            where( [(); R * C]: , )
+            {$method}
         }
     };
 }
 
 macro_rules! impl_op_3 {
     ($bound:ident, $method:ident) => {
-        impl<T, const D1: usize, const D2: usize, const D3: usize> $bound for Tensor3<T, D1, D2, D3>
-        where
-            T: Default + Copy + Debug + $bound<Output = T>,
-            [(); D1 * D2 * D3]: ,
-        {
-            type Output = Self;
+        impl_op_inner!{
+            impl[const D1: usize, const D2: usize, const D3: usize] $bound for Tensor3<T, D1, D2, D3>
+            where( [(); D1 * D2 * D3]: , )
+            {$method}
+        }
+    };
+}
 
-            fn $method(mut self, other: Self) -> Self {
-                for (elem, &val) in self.0.iter_mut().zip(other.0.iter()) {
-                    *elem = $bound::$method(*elem, val);
-                }
-                self
-            }
+macro_rules! impl_op_assign_1 {
+    ($bound:ident, $method:ident) => {
+        impl_op_assign_inner! {
+            impl[const L: usize] $bound for Tensor1<T, L>
+            where( )
+            {$method}
+        }
+    };
+}
+
+macro_rules! impl_op_assign_2 {
+    ($bound:ident, $method:ident) => {
+        impl_op_assign_inner! {
+            impl[const R: usize, const C: usize] $bound for Tensor2<T, R, C>
+            where( [(); R * C]: , )
+            {$method}
         }
     };
 }
 
 macro_rules! impl_op_assign_3 {
     ($bound:ident, $method:ident) => {
-        impl<T, const D1: usize, const D2: usize, const D3: usize> $bound for Tensor3<T, D1, D2, D3>
-        where
-            T: Default + Copy + Debug + $bound,
-            [(); D1 * D2 * D3]: ,
-        {
-            fn $method(&mut self, other: Self) {
-                for (elem, &val) in self.0.iter_mut().zip(other.0.iter()) {
-                    $bound::$method(elem, val);
-                }
-            }
+        impl_op_assign_inner!{
+            impl[const D1: usize, const D2: usize, const D3: usize] $bound for Tensor3<T, D1, D2, D3>
+            where( [(); D1 * D2 * D3]: , )
+            {$method}
         }
     };
 }
