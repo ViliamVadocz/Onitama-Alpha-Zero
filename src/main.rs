@@ -1,52 +1,32 @@
 #![feature(const_generics, const_evaluatable_checked)]
 #![allow(incomplete_features)]
 
-use rand::distributions::Uniform;
-use tensor::matrix::Matrix;
+use tensor::{Tensor, Tensor1, Tensor2, Tensor3, ElementWiseTensor, RandomTensor, rand_distr::Uniform, reshape};
 
 fn main() {
     #[rustfmt::skip]
-    let a = Matrix::<_, 5, 5>::new([
-        1., 1., 1., 1., 1.,
-        2., 2., 2., 2., 2.,
-        3., 3., 3., 3., 3.,
-        1., 0., 2., 0., 3.,
-        0., 1., 0., 2., 0.,
-    ]);
+    let a = Tensor1::<i32, 10>::new([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    println!("{}", a);
     #[rustfmt::skip]
-    let b = Matrix::<_, 3, 3>::new([
-        1., 2., 3.,
-        1., 2., 3.,
-        1., 2., 3.,
-    ]);
-    // println!("{:.2}", a.convolve(b));
-    // println!("{:.2}", a.convolve_with_pad(b));
-
-    let c = Matrix::<_, 5, 4>::rand(Uniform::new(0., 5.));
-    println!("{:.2}", c);
-    // println!("{:.2}", c.reshape::<2, 10>());
-    // println!("{:.2}", c.transpose());
-    // println!("{:.2}", c.convolve(b))
-
-    println!(
-        "{:.2}",
-        a.matmul(c)
-            .matmul(c.transpose())
-            .matmul(a)
-            .scale(0.0001)
-            .convolve(b)
-    );
-
-    #[rustfmt::skip]
-    let d = Matrix::<_, 3, 3>::new([
+    let b = Tensor2::<i32, 3, 3>::new([
         1, 2, 3,
-        3, 2, 1,
-        0, 0, 1,
+        4, 5, 6,
+        7, 8, 9,
     ]);
-    println!("{}", d);
+    println!("{}", b);
+    #[rustfmt::skip]
+    let c = Tensor3::<i32, 2, 2, 2>::new([
+        0, 1,
+        2, 3,
 
-    let e = Matrix::<_, 3, 3>::rand(Uniform::new(0, 5));
-    println!("{}", e);
+        4, 5,
+        6, 7,
+    ]);
+    println!("{}", c);
 
-    println!("{}\n{}", d.matmul(e), e.matmul(d));
+    // println!("{}", a.slice::<3>(4));
+    // println!("{}", b.slice::<2, 2>(1, 1));
+    // println!("{}", c.slice::<2, 1, 1>(0, 1, 1));
+
+    println!("{}", reshape::<_, _, Tensor2<_, 2, 2>, 4>(a.slice::<4>(3)));
 }
