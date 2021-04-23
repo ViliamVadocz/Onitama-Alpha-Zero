@@ -1,3 +1,4 @@
+pub mod slice;
 pub mod elementwise;
 #[cfg(feature = "rand")]
 pub mod random;
@@ -36,7 +37,8 @@ where
     T: Default + Copy + Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Debug::fmt(&self.0, f)
+        Debug::fmt(&self.0, f)?;
+        writeln!(f, )
     }
 }
 
@@ -136,12 +138,11 @@ where
     [(); D1 * D2 * D3]: ,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "[")?;
+        write!(f, "[")?;
         for i in 0..D3 {
             for j in 0..D2 {
-                let s = i * D2;
-                Debug::fmt(&self.0[(s + j * D1)..(s + (j + 1) * D1)], f)?;
                 writeln!(f,)?;
+                Debug::fmt(&self.0[((i * D1 * D2) + j * D1)..((i * D1 * D2) + (j + 1) * D1)], f)?;
             }
             writeln!(f,)?;
         }
@@ -171,4 +172,13 @@ where
     // fn reshape<G: Tensor<T, { D1 * D2 * D3 }>>(self) -> G {
     //     G::new(self.0)
     // }
+}
+
+pub fn reshape<T, A, B, const X: usize>(input: A) -> B
+where
+    T: Copy + Default + Debug,
+    A: Tensor<T, X>,
+    B: Tensor<T, X>,
+{
+    B::new(input.get_data())
 }
