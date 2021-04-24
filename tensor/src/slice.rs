@@ -9,10 +9,7 @@ where
     pub fn slice<const NEW_L: usize>(self, offset: usize) -> Tensor1<T, NEW_L> {
         assert!(offset + NEW_L <= L);
         let mut data = [T::default(); NEW_L];
-        for (elem, &val) in data
-            .iter_mut()
-            .zip(self.0[offset..(offset + NEW_L)].into_iter())
-        {
+        for (elem, &val) in data.iter_mut().zip(self.0[offset..(offset + NEW_L)].iter()) {
             *elem = val;
         }
         Tensor1(data)
@@ -25,7 +22,7 @@ where
         let mut data = [T::default(); NEW_L];
         let start = max(offset, 0) as usize;
         let end = min(offset + NEW_L as isize, L as isize) as usize;
-        for (elem, &val) in data.iter_mut().zip(self.0[start..end].into_iter()) {
+        for (elem, &val) in data.iter_mut().zip(self.0[start..end].iter()) {
             *elem = val;
         }
         Tensor1(data)

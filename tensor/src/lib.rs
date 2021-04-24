@@ -1,11 +1,22 @@
 #![feature(const_generics, const_evaluatable_checked)]
 #![allow(incomplete_features)]
 
+use std::fmt::{Debug, Display};
+
+mod convolution;
+mod default;
+mod display;
+mod elementwise;
+mod slice;
 mod tensor;
 
 #[cfg(feature = "rand")]
-pub use rand::distributions as rand_distr;
-pub use tensor::elementwise::ElementWiseTensor;
+mod random;
+
+pub use crate::{
+    elementwise::ElementWiseTensor,
+    tensor::{reshape, Matrix, Tensor, Tensor1, Tensor2, Tensor3, Vector},
+};
+
 #[cfg(feature = "rand")]
-pub use tensor::random::RandomTensor;
-pub use tensor::{reshape, Tensor, Tensor1, Tensor2, Tensor3};
+pub use {crate::random::RandomTensor, rand::distributions as rand_distr};

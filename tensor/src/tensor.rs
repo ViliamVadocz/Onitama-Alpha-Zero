@@ -1,12 +1,4 @@
-pub mod convolution;
-pub mod default;
-pub mod display;
-pub mod elementwise;
-#[cfg(feature = "rand")]
-pub mod random;
-pub mod slice;
-
-use std::fmt::{self, Debug, Display};
+use super::*;
 
 pub type Vector<T, const L: usize> = Tensor1<T, L>;
 pub type Matrix<T, const R: usize, const C: usize> = Tensor2<T, R, C>;
@@ -32,7 +24,7 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 #[derive(Clone, Copy, Debug)]
-pub struct Tensor1<T, const L: usize>([T; L])
+pub struct Tensor1<T, const L: usize>(pub(crate) [T; L])
 where
     T: Default + Copy + Debug;
 
@@ -58,7 +50,7 @@ where
 }
 ////////////////////////////////////////////////////////////////////////////////
 #[derive(Clone, Copy, Debug)]
-pub struct Tensor2<T, const R: usize, const C: usize>([T; R * C])
+pub struct Tensor2<T, const R: usize, const C: usize>(pub(crate) [T; R * C])
 where
     T: Default + Copy + Debug,
     [(); R * C]: ;
@@ -87,7 +79,9 @@ where
 
 ////////////////////////////////////////////////////////////////////////////////
 #[derive(Clone, Copy, Debug)]
-pub struct Tensor3<T, const D1: usize, const D2: usize, const D3: usize>([T; D1 * D2 * D3])
+pub struct Tensor3<T, const D1: usize, const D2: usize, const D3: usize>(
+    pub(crate) [T; D1 * D2 * D3],
+)
 where
     T: Default + Copy + Debug,
     [(); D1 * D2 * D3]: ;

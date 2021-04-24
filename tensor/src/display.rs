@@ -1,4 +1,5 @@
 use super::*;
+use std::fmt;
 
 impl<T, const L: usize> Display for Tensor1<T, L>
 where

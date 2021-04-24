@@ -1,4 +1,3 @@
-use super::elementwise::*;
 use super::*;
 use std::ops::{AddAssign, MulAssign};
 
@@ -6,6 +5,7 @@ impl<T, const L: usize> Tensor1<T, L>
 where
     T: Default + Copy + Debug,
 {
+    /// Naive convolution.
     pub fn convolve<const KERN_L: usize>(
         self,
         kernel: Tensor1<T, KERN_L>,
@@ -20,6 +20,7 @@ where
         res
     }
 
+    /// Naive convolution with default padding to preserve shape.
     pub fn convolve_with_pad<const KERN_L: usize>(self, kernel: Tensor1<T, KERN_L>) -> Tensor1<T, L>
     where
         T: AddAssign + MulAssign,
@@ -38,6 +39,7 @@ where
     T: Default + Copy + Debug,
     [(); R * C]: ,
 {
+    /// Naive convolution.
     pub fn convolve<const KERN_R: usize, const KERN_C: usize>(
         self,
         kernel: Tensor2<T, KERN_R, KERN_C>,
@@ -56,6 +58,7 @@ where
         res
     }
 
+    /// Naive convolution with default padding to preserve shape.
     pub fn convolve_with_pad<const KERN_R: usize, const KERN_C: usize>(
         self,
         kernel: Tensor2<T, KERN_R, KERN_C>,
@@ -83,6 +86,7 @@ where
     T: Default + Copy + Debug,
     [(); D1 * D2 * D3]: ,
 {
+    /// Naive convolution.
     pub fn convolve<const KERN_D1: usize, const KERN_D2: usize, const KERN_D3: usize>(
         self,
         kernel: Tensor3<T, KERN_D1, KERN_D2, KERN_D3>,
@@ -102,6 +106,7 @@ where
         res
     }
 
+    /// Naive convolution with default padding to preserve shape.
     pub fn convolve_with_pad<const KERN_D1: usize, const KERN_D2: usize, const KERN_D3: usize>(
         self,
         kernel: Tensor3<T, KERN_D1, KERN_D2, KERN_D3>,
