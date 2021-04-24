@@ -1,7 +1,8 @@
-pub mod slice;
+pub mod convolution;
 pub mod elementwise;
 #[cfg(feature = "rand")]
 pub mod random;
+pub mod slice;
 
 use std::fmt::{self, Debug, Display};
 
@@ -38,7 +39,7 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         Debug::fmt(&self.0, f)?;
-        writeln!(f, )
+        writeln!(f,)
     }
 }
 
@@ -142,7 +143,10 @@ where
         for i in 0..D3 {
             for j in 0..D2 {
                 writeln!(f,)?;
-                Debug::fmt(&self.0[((i * D1 * D2) + j * D1)..((i * D1 * D2) + (j + 1) * D1)], f)?;
+                Debug::fmt(
+                    &self.0[((i * D1 * D2) + j * D1)..((i * D1 * D2) + (j + 1) * D1)],
+                    f,
+                )?;
             }
             writeln!(f,)?;
         }
