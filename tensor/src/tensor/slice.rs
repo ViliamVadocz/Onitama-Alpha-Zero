@@ -1,5 +1,5 @@
 use super::*;
-use std::cmp::{min, max};
+use std::cmp::{max, min};
 
 impl<T, const L: usize> Tensor1<T, L>
 where
@@ -9,7 +9,10 @@ where
     pub fn slice<const NEW_L: usize>(self, offset: usize) -> Tensor1<T, NEW_L> {
         assert!(offset + NEW_L <= L);
         let mut data = [T::default(); NEW_L];
-        for (elem, &val) in data.iter_mut().zip(self.0[offset..(offset + NEW_L)].into_iter()) {
+        for (elem, &val) in data
+            .iter_mut()
+            .zip(self.0[offset..(offset + NEW_L)].into_iter())
+        {
             *elem = val;
         }
         Tensor1(data)
@@ -126,8 +129,24 @@ where
         [(); NEW_D1 * NEW_D2 * NEW_D3]: ,
     {
         let mut data = [T::default(); NEW_D1 * NEW_D2 * NEW_D3];
-        // TODO
-        unimplemented!("TODO");
+        let new_d1 = NEW_D1 as isize;
+        let new_d2 = NEW_D2 as isize;
+        for (i, elem) in data.iter_mut().enumerate() {
+            let i = i as isize;
+            let d1 = i % new_d1 + d1_offset;
+            let d2 = (i / new_d1) % new_d2 + d2_offset;
+            let d3 = (i / (new_d1 * new_d2)) + d3_offset;
+            if d1 < 0 || d2 < 0 || d3 < 0 {
+                continue;
+            }
+            let d1 = d1 as usize;
+            let d2 = d2 as usize;
+            let d3 = d3 as usize;
+            if d1 >= D1 || d2 >= D2 || d3 >= D3 {
+                continue;
+            }
+            *elem = self.0[d1 + d2 * D1 + d3 * (D1 * D2)];
+        }
         Tensor3(data)
     }
 }
