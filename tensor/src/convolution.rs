@@ -129,3 +129,98 @@ where
         res
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn convolution_tensor1() {
+        let a = Vector::new([1, 2, 3, 4, 5, 6, 7]);
+        let kernel = Vector::new([1, 2, 3]);
+        assert_eq!(a.convolve(kernel), Vector::new([14, 20, 26, 32, 38]));
+        assert_eq!(
+            a.convolve_with_pad(kernel),
+            Vector::new([8, 14, 20, 26, 32, 38, 20])
+        );
+
+        let b = Vector::new([1, 2, 3, 4, 5, 6]);
+        let kernel = Vector::new([1, 2, 3, 4]);
+        assert_eq!(b.convolve(kernel), Vector::new([30, 40, 50]));
+        assert_eq!(
+            b.convolve_with_pad(kernel),
+            Vector::new([11, 20, 30, 40, 50, 32])
+        );
+    }
+
+    #[test]
+    fn convolution_tensor2() {
+        #[rustfmt::skip]
+        let a = Matrix::<_, 3, 3>::new([
+            1, 2, 3,
+            4, 5, 6,
+            7, 8, 9,
+        ]);
+        #[rustfmt::skip]
+        let kernel = Matrix::<_, 2, 2>::new([
+            1, 2,
+            3, 4,
+        ]);
+        assert_eq!(a.convolve(kernel), Matrix::new([37, 47, 67, 77]));
+        assert_eq!(
+            a.convolve_with_pad(kernel),
+            Matrix::new([4, 11, 18, 18, 37, 47, 36, 67, 77])
+        );
+
+        #[rustfmt::skip]
+        let b = Matrix::<_, 4, 3>::new([
+            1, 2, 3,
+            4, 5, 6,
+            7, 8, 9,
+            10, 11, 12,
+        ]);
+        #[rustfmt::skip]
+        let kernel = Matrix::<_, 3, 2>::new([
+            1, 2,
+            3, 4,
+            5, 6,
+        ]);
+        assert_eq!(b.convolve(kernel), Matrix::new([120, 141, 183, 204]));
+        #[rustfmt::skip]
+        assert_eq!(b.convolve_with_pad(kernel), Matrix::new([
+            28, 61, 79,
+            60, 120, 141,
+            96, 183, 204,
+            54, 97, 107,
+        ]));
+    }
+
+    #[test]
+    fn convolution_tensor3() {
+        #[rustfmt::skip]
+        let a = Tensor3::<_, 3, 2, 2>::new([
+            1, 2, 3,
+            4, 5, 6,
+
+            7, 8, 9,
+            10, 11, 12,
+        ]);
+        #[rustfmt::skip]
+        let kernel = Tensor3::<_, 2, 2, 2>::new([
+            1, 2,
+            3, 4,
+
+            5, 6,
+            7, 8,
+        ]);
+        assert_eq!(a.convolve(kernel), Tensor3::new([278, 314]));
+        #[rustfmt::skip]
+        assert_eq!(a.convolve_with_pad(kernel), Tensor3::new([
+            8, 23, 38,
+            38, 85, 111,
+
+            60, 124, 146,
+            140, 278, 314
+        ]));
+    }
+}

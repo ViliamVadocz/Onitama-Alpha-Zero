@@ -22,8 +22,7 @@ where
     B::new(input.get_data())
 }
 
-////////////////////////////////////////////////////////////////////////////////
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Tensor1<T, const L: usize>(pub(crate) [T; L])
 where
     T: Default + Copy + Debug;
@@ -48,8 +47,8 @@ where
     //     G::new(self.0)
     // }
 }
-////////////////////////////////////////////////////////////////////////////////
-#[derive(Clone, Copy, Debug)]
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Tensor2<T, const R: usize, const C: usize>(pub(crate) [T; R * C])
 where
     T: Default + Copy + Debug,
@@ -78,7 +77,7 @@ where
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Tensor3<T, const D1: usize, const D2: usize, const D3: usize>(
     pub(crate) [T; D1 * D2 * D3],
 )
@@ -107,4 +106,43 @@ where
     // fn reshape<G: Tensor<T, { D1 * D2 * D3 }>>(self) -> G {
     //     G::new(self.0)
     // }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn create_tensor1() {
+        let _ = Vector::<(), 0>::new([]);
+        let _ = Vector::new([0, 1, 2, 3, 4, 5, 6, 7]);
+        let _ = Vector::new([0., 1., 2., 3., 4., 5.]);
+    }
+
+    #[test]
+    fn create_tensor2() {
+        let _ = Matrix::<(), 0, 0>::new([]);
+        let _ = Matrix::<_, 2, 4>::new([0, 1, 2, 3, 4, 5, 6, 7]);
+        let _ = Matrix::<_, 3, 2>::new([0., 1., 2., 3., 4., 5.]);
+    }
+
+    #[test]
+    fn create_tensor3() {
+        let _ = Tensor3::<(), 0, 0, 0>::new([]);
+        let _ = Tensor3::<_, 2, 2, 2>::new([0, 1, 2, 3, 4, 5, 6, 7]);
+        let _ = Tensor3::<_, 1, 2, 3>::new([0., 1., 2., 3., 4., 5.]);
+    }
+
+    #[test]
+    fn test_reshape() {
+        let a = Tensor1::new([0, 1, 2, 3, 4, 4, 5, 6, 7, 9, 10, 11]);
+        #[rustfmt::skip]
+        let b =
+            reshape(
+            reshape::<_, _, Tensor2<_, 2, 6>, 12>(
+            reshape::<_, _, Tensor3<_, 2, 3, 2>, 12>(
+            reshape::<_, _, Tensor2<_, 4, 3>, 12>(a),
+            )));
+        assert_eq!(a, b);
+    }
 }

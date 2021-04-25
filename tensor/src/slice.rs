@@ -1,5 +1,4 @@
 use super::*;
-use std::cmp::{max, min};
 
 impl<T, const L: usize> Tensor1<T, L>
 where
@@ -20,10 +19,16 @@ where
     /// Padded with the default value.
     pub fn slice_with_pad<const NEW_L: usize>(self, offset: isize) -> Tensor1<T, NEW_L> {
         let mut data = [T::default(); NEW_L];
-        let start = max(offset, 0) as usize;
-        let end = min(offset + NEW_L as isize, L as isize) as usize;
-        for (elem, &val) in data.iter_mut().zip(self.0[start..end].iter()) {
-            *elem = val;
+        for (i, elem) in data.iter_mut().enumerate() {
+            let i = i as isize + offset;
+            if i < 0 {
+                continue;
+            }
+            let i = i as usize;
+            if i >= L {
+                break;
+            }
+            *elem = self.0[i];
         }
         Tensor1(data)
     }
@@ -145,5 +150,68 @@ where
             *elem = self.0[d1 + d2 * D1 + d3 * (D1 * D2)];
         }
         Tensor3(data)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn slice_tensor1() {
+        let a = Vector::new([0, 1, 2, 3, 4, 5, 6, 7]);
+        assert_eq!(a.slice::<4>(3), Vector::new([3, 4, 5, 6]));
+        assert_eq!(
+            a.slice_with_pad::<10>(-1),
+            Vector::new([0, 0, 1, 2, 3, 4, 5, 6, 7, 0])
+        );
+    }
+
+    #[test]
+    fn slice_tensor2() {
+        let a: Matrix<_, 3, 3> = Matrix::new([0, 1, 2, 3, 4, 5, 6, 7, 8]);
+        assert_eq!(a.slice::<2, 2>(1, 1), Matrix::new([4, 5, 7, 8]));
+        assert_eq!(a.slice::<1, 3>(1, 0), Matrix::new([3, 4, 5]));
+        assert_eq!(a.slice::<3, 1>(0, 2), Matrix::new([2, 5, 8]));
+        assert_eq!(a.slice_with_pad::<2, 2>(-1, 2), Matrix::new([0, 0, 2, 0]));
+        assert_eq!(
+            a.slice_with_pad::<4, 2>(0, -1),
+            Matrix::new([0, 0, 0, 3, 0, 6, 0, 0])
+        );
+        assert_eq!(
+            a.slice_with_pad::<3, 3>(1, 1),
+            Matrix::new([4, 5, 0, 7, 8, 0, 0, 0, 0])
+        );
+    }
+
+    #[test]
+    fn slice_tensor3() {
+        #[rustfmt::skip]
+        let a: Tensor3<_, 2, 2, 2> = Tensor3::new([
+            0, 1,
+            2, 3,
+            
+            4, 5,
+            6, 7  
+        ]);
+        assert_eq!(a.slice::<2, 2, 1>(0, 0, 0), Tensor3::new([0, 1, 2, 3]));
+        assert_eq!(a.slice::<2, 1, 2>(0, 0, 0), Tensor3::new([0, 1, 4, 5]));
+        assert_eq!(a.slice::<1, 2, 2>(0, 0, 0), Tensor3::new([0, 2, 4, 6]));
+        assert_eq!(a.slice::<1, 1, 2>(1, 0, 0), Tensor3::new([1, 5]));
+        assert_eq!(a.slice::<1, 2, 1>(0, 0, 1), Tensor3::new([4, 6]));
+        assert_eq!(a.slice::<2, 1, 1>(0, 1, 0), Tensor3::new([2, 3]));
+        assert_eq!(a.slice::<2, 1, 1>(0, 1, 0), Tensor3::new([2, 3]));
+        assert_eq!(
+            a.slice_with_pad::<2, 2, 2>(1, 0, 0),
+            Tensor3::new([1, 0, 3, 0, 5, 0, 7, 0])
+        );
+        assert_eq!(
+            a.slice_with_pad::<2, 2, 2>(0, 1, 0),
+            Tensor3::new([2, 3, 0, 0, 6, 7, 0, 0])
+        );
+        assert_eq!(
+            a.slice_with_pad::<2, 2, 2>(0, 0, 1),
+            Tensor3::new([4, 5, 6, 7, 0, 0, 0, 0])
+        );
     }
 }
