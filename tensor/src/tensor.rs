@@ -1,7 +1,7 @@
 use super::*;
 
 pub type Vector<T, const L: usize> = Tensor1<T, L>;
-pub type Matrix<T, const R: usize, const C: usize> = Tensor2<T, R, C>;
+pub type Matrix<T, const C: usize, const R: usize> = Tensor2<T, C, R>;
 
 pub trait Tensor<T, const X: usize>: Default + Display
 where
@@ -49,25 +49,25 @@ where
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Tensor2<T, const R: usize, const C: usize>(pub(crate) [T; R * C])
+pub struct Tensor2<T, const C: usize, const R: usize>(pub(crate) [T; C * R])
 where
     T: Default + Copy + Debug,
-    [(); R * C]: ;
+    [(); C * R]: ;
 
-impl<T, const R: usize, const C: usize> Tensor<T, { R * C }> for Tensor2<T, R, C>
+impl<T, const C: usize, const R: usize> Tensor<T, { C * R }> for Tensor2<T, C, R>
 where
     T: Default + Copy + Debug,
-    [(); R * C]: ,
+    [(); C * R]: ,
 {
-    fn new(data: [T; R * C]) -> Self {
+    fn new(data: [T; C * R]) -> Self {
         Tensor2(data)
     }
 
-    fn get_data(self) -> [T; R * C] {
+    fn get_data(self) -> [T; C * R] {
         self.0
     }
 
-    fn get_data_mut(&mut self) -> &mut [T; R * C] {
+    fn get_data_mut(&mut self) -> &mut [T; C * R] {
         &mut self.0
     }
 

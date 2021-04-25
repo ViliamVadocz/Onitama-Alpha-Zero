@@ -18,7 +18,7 @@ where
 
 impl<T, const L: usize> RandomTensor<T, L> for Tensor1<T, L> where T: Default + Copy + Debug {}
 
-impl<T, const R: usize, const C: usize> RandomTensor<T, { R * C }> for Tensor2<T, R, C> where
+impl<T, const C: usize, const R: usize> RandomTensor<T, { C * R }> for Tensor2<T, C, R> where
     T: Default + Copy + Debug
 {
 }

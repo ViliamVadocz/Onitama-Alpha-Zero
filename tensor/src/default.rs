@@ -9,13 +9,13 @@ where
     }
 }
 
-impl<T, const R: usize, const C: usize> Default for Tensor2<T, R, C>
+impl<T, const C: usize, const R: usize> Default for Tensor2<T, C, R>
 where
     T: Default + Copy + Debug,
-    [(); R * C]: ,
+    [(); C * R]: ,
 {
     fn default() -> Self {
-        Tensor2::new([T::default(); R * C])
+        Tensor2::new([T::default(); C * R])
     }
 }
 

@@ -34,48 +34,48 @@ where
     }
 }
 
-impl<T, const R: usize, const C: usize> Tensor2<T, R, C>
+impl<T, const C: usize, const R: usize> Tensor2<T, C, R>
 where
     T: Default + Copy + Debug,
-    [(); R * C]: ,
+    [(); C * R]: ,
 {
     /// Naive convolution.
-    pub fn convolve<const KERN_R: usize, const KERN_C: usize>(
+    pub fn convolve<const KERN_C: usize, const KERN_R: usize>(
         self,
-        kernel: Tensor2<T, KERN_R, KERN_C>,
-    ) -> Tensor2<T, { R + 1 - KERN_R }, { C + 1 - KERN_C }>
+        kernel: Tensor2<T, KERN_C, KERN_R>,
+    ) -> Tensor2<T, { C + 1 - KERN_C }, { R + 1 - KERN_R }>
     where
         T: AddAssign + MulAssign,
-        [(); KERN_R * KERN_C]: ,
-        [(); (R + 1 - KERN_R) * (C + 1 - KERN_C)]: ,
+        [(); KERN_C * KERN_R]: ,
+        [(); (C + 1 - KERN_C) * (R + 1 - KERN_R)]: ,
     {
         let mut res = Tensor2::default();
         for (i, &val) in kernel.0.iter().enumerate() {
-            let r = i / KERN_C;
             let c = i % KERN_C;
-            res += self.slice(r, c).scale(val);
+            let r = i / KERN_C;
+            res += self.slice(c, r).scale(val);
         }
         res
     }
 
     /// Naive convolution with default padding to preserve shape.
-    pub fn convolve_with_pad<const KERN_R: usize, const KERN_C: usize>(
+    pub fn convolve_with_pad<const KERN_C: usize, const KERN_R: usize>(
         self,
-        kernel: Tensor2<T, KERN_R, KERN_C>,
-    ) -> Tensor2<T, R, C>
+        kernel: Tensor2<T, KERN_C, KERN_R>,
+    ) -> Tensor2<T, C, R>
     where
         T: AddAssign + MulAssign,
-        [(); KERN_R * KERN_C]: ,
-        [(); (R + KERN_R - 1) * (C + KERN_C - 1)]: ,
+        [(); KERN_C * KERN_R]: ,
+        [(); (C + KERN_C - 1) * (R + KERN_R - 1)]: ,
     {
         let mut res = Tensor2::default();
         let kern_r = KERN_R as isize;
         let kern_c = KERN_C as isize;
         for (i, &val) in kernel.0.iter().enumerate() {
             let i = i as isize;
-            let r = i / kern_c as isize - kern_r / 2;
             let c = i % kern_c as isize - kern_c / 2;
-            res += self.slice_with_pad(r, c).scale(val);
+            let r = i / kern_c as isize - kern_r / 2;
+            res += self.slice_with_pad(c, r).scale(val);
         }
         res
     }
@@ -173,14 +173,14 @@ mod tests {
         );
 
         #[rustfmt::skip]
-        let b = Matrix::<_, 4, 3>::new([
+        let b = Matrix::<_, 3, 4>::new([
             1, 2, 3,
             4, 5, 6,
             7, 8, 9,
             10, 11, 12,
         ]);
         #[rustfmt::skip]
-        let kernel = Matrix::<_, 3, 2>::new([
+        let kernel = Matrix::<_, 2, 3>::new([
             1, 2,
             3, 4,
             5, 6,

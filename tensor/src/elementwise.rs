@@ -20,7 +20,7 @@ where
 
 impl<T, const L: usize> ElementWiseTensor<T, L> for Tensor1<T, L> where T: Default + Copy + Debug {}
 
-impl<T, const R: usize, const C: usize> ElementWiseTensor<T, { R * C }> for Tensor2<T, R, C> where
+impl<T, const C: usize, const R: usize> ElementWiseTensor<T, { C * R }> for Tensor2<T, C, R> where
     T: Default + Copy + Debug
 {
 }
@@ -89,8 +89,8 @@ macro_rules! impl_op_1 {
 macro_rules! impl_op_2 {
     ($bound:ident, $method:ident) => {
         impl_op_inner! {
-            impl[const R: usize, const C: usize] $bound for Tensor2<T, R, C>
-            where( [(); R * C]: , )
+            impl[const C: usize, const R: usize] $bound for Tensor2<T, C, R>
+            where( [(); C * R]: , )
             {$method}
         }
     };
@@ -119,8 +119,8 @@ macro_rules! impl_op_assign_1 {
 macro_rules! impl_op_assign_2 {
     ($bound:ident, $method:ident) => {
         impl_op_assign_inner! {
-            impl[const R: usize, const C: usize] $bound for Tensor2<T, R, C>
-            where( [(); R * C]: , )
+            impl[const C: usize, const R: usize] $bound for Tensor2<T, C, R>
+            where( [(); C * R]: , )
             {$method}
         }
     };

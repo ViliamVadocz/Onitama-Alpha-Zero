@@ -11,10 +11,10 @@ where
     }
 }
 
-impl<T, const R: usize, const C: usize> Display for Tensor2<T, R, C>
+impl<T, const C: usize, const R: usize> Display for Tensor2<T, C, R>
 where
     T: Default + Copy + Debug,
-    [(); R * C]: ,
+    [(); C * R]: ,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for i in 0..R {

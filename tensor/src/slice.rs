@@ -34,26 +34,26 @@ where
     }
 }
 
-impl<T, const R: usize, const C: usize> Tensor2<T, R, C>
+impl<T, const C: usize, const R: usize> Tensor2<T, C, R>
 where
     T: Default + Copy + Debug,
-    [(); R * C]: ,
+    [(); C * R]: ,
 {
     /// Get a slice of the tensor.
-    pub fn slice<const NEW_R: usize, const NEW_C: usize>(
+    pub fn slice<const NEW_C: usize, const NEW_R: usize>(
         self,
-        row_offset: usize,
         col_offset: usize,
-    ) -> Tensor2<T, NEW_R, NEW_C>
+        row_offset: usize,
+    ) -> Tensor2<T, NEW_C, NEW_R>
     where
-        [(); NEW_R * NEW_C]: ,
+        [(); NEW_C * NEW_R]: ,
     {
-        assert!(row_offset + NEW_R <= R);
         assert!(col_offset + NEW_C <= C);
-        let mut data = [T::default(); NEW_R * NEW_C];
+        assert!(row_offset + NEW_R <= R);
+        let mut data = [T::default(); NEW_C * NEW_R];
         for (i, elem) in data.iter_mut().enumerate() {
-            let r = i / NEW_C + row_offset;
             let c = i % NEW_C + col_offset;
+            let r = i / NEW_C + row_offset;
             *elem = self.0[r * C + c];
         }
         Tensor2(data)
@@ -62,25 +62,25 @@ where
     /// Get a slice of the matrix with padding if needed.
     /// Allow slices which do not entirely fit inside the tensor.
     /// Padded with the default value.
-    pub fn slice_with_pad<const NEW_R: usize, const NEW_C: usize>(
+    pub fn slice_with_pad<const NEW_C: usize, const NEW_R: usize>(
         self,
-        row_offset: isize,
         col_offset: isize,
-    ) -> Tensor2<T, NEW_R, NEW_C>
+        row_offset: isize,
+    ) -> Tensor2<T, NEW_C, NEW_R>
     where
-        [(); NEW_R * NEW_C]: ,
+        [(); NEW_C * NEW_R]: ,
     {
-        let mut data = [T::default(); NEW_R * NEW_C];
+        let mut data = [T::default(); NEW_C * NEW_R];
         let new_c = NEW_C as isize;
         for (i, elem) in data.iter_mut().enumerate() {
             let i = i as isize;
-            let r = i / new_c + row_offset;
             let c = i % new_c + col_offset;
-            if r < 0 || c < 0 {
+            let r = i / new_c + row_offset;
+            if c < 0 || r < 0 {
                 continue;
             }
-            let r = r as usize;
             let c = c as usize;
+            let r = r as usize;
             if r >= R || c >= C {
                 continue;
             }
@@ -171,11 +171,11 @@ mod tests {
     fn slice_tensor2() {
         let a: Matrix<_, 3, 3> = Matrix::new([0, 1, 2, 3, 4, 5, 6, 7, 8]);
         assert_eq!(a.slice::<2, 2>(1, 1), Matrix::new([4, 5, 7, 8]));
-        assert_eq!(a.slice::<1, 3>(1, 0), Matrix::new([3, 4, 5]));
-        assert_eq!(a.slice::<3, 1>(0, 2), Matrix::new([2, 5, 8]));
-        assert_eq!(a.slice_with_pad::<2, 2>(-1, 2), Matrix::new([0, 0, 2, 0]));
+        assert_eq!(a.slice::<3, 1>(0, 1), Matrix::new([3, 4, 5]));
+        assert_eq!(a.slice::<1, 3>(2, 0), Matrix::new([2, 5, 8]));
+        assert_eq!(a.slice_with_pad::<2, 2>(2, -1), Matrix::new([0, 0, 2, 0]));
         assert_eq!(
-            a.slice_with_pad::<4, 2>(0, -1),
+            a.slice_with_pad::<2, 4>(-1, 0),
             Matrix::new([0, 0, 0, 3, 0, 6, 0, 0])
         );
         assert_eq!(
