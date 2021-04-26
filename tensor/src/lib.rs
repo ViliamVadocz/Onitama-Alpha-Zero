@@ -1,5 +1,7 @@
-#![feature(const_generics, const_evaluatable_checked)]
+#![feature(const_generics, const_evaluatable_checked, array_map)]
 #![allow(incomplete_features)]
+#![feature(test)]
+extern crate test;
 
 use std::fmt::{Debug, Display};
 

@@ -231,4 +231,39 @@ mod tests {
         b -= Tensor3::new([4; 8]);
         assert_eq!(a, b);
     }
+
+    #[test]
+    fn elementwise_map() {
+        let a = Tensor3::<_, 2, 2, 2>::new([1, 2, 3, 4, 5, 6, 7, 8]);
+        assert_eq!(
+            a.map(|x| x + 1),
+            Tensor3::<_, 2, 2, 2>::new([2, 3, 4, 5, 6, 7, 8, 9])
+        );
+    }
+}
+
+#[cfg(test)]
+mod benches {
+    use super::*;
+    use test::{black_box, Bencher};
+
+    #[bench]
+    fn elementwise_op(ben: &mut Bencher) {
+        let a = Tensor3::<f64, 20, 20, 20>::rand(rand_distr::Uniform::new(-1., 1.));
+        let b = Tensor3::<f64, 20, 20, 20>::rand(rand_distr::Uniform::new(-1., 1.));
+        ben.iter(|| a * b);
+    }
+
+    #[bench]
+    fn elementwise_scale(ben: &mut Bencher) {
+        let a = Tensor3::<f64, 20, 20, 20>::rand(rand_distr::Uniform::new(-1., 1.));
+        ben.iter(|| a.scale(5.));
+    }
+
+    #[bench]
+    fn elementwise_map(ben: &mut Bencher) {
+        let a = Tensor3::<f64, 20, 20, 20>::rand(rand_distr::Uniform::new(-1., 1.));
+        let f = black_box(|x| x + 1.);
+        ben.iter(|| a.map(f));
+    }
 }

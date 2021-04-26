@@ -215,3 +215,21 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod benches {
+    use super::*;
+    use test::Bencher;
+
+    #[bench]
+    fn slice(ben: &mut Bencher) {
+        let a = Tensor3::<f64, 20, 20, 20>::rand(rand_distr::Uniform::new(-1., 1.));
+        ben.iter(|| a.slice::<18, 18, 18>(1, 1, 1));
+    }
+
+    #[bench]
+    fn slice_with_pad(ben: &mut Bencher) {
+        let a = Tensor3::<f64, 20, 20, 20>::rand(rand_distr::Uniform::new(-1., 1.));
+        ben.iter(|| a.slice_with_pad::<22, 22, 22>(-1, -1, -1));
+    }
+}

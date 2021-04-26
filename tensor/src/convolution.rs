@@ -224,3 +224,24 @@ mod tests {
         ]));
     }
 }
+
+#[cfg(test)]
+mod benches {
+    use super::*;
+    use test::Bencher;
+
+    #[bench]
+    fn convolve(ben: &mut Bencher) {
+        let a = Tensor3::<f64, 20, 20, 20>::rand(rand_distr::Uniform::new(-1., 1.));
+        let b = Tensor3::<f64, 3, 3, 3>::rand(rand_distr::Uniform::new(-1., 1.));
+        ben.iter(|| a.convolve(b));
+    }
+
+    #[bench]
+    fn convolve_with_pad(ben: &mut Bencher) {
+        let a = Tensor3::<f64, 20, 20, 20>::rand(rand_distr::Uniform::new(-1., 1.));
+        let b = Tensor3::<f64, 3, 3, 3>::rand(rand_distr::Uniform::new(-1., 1.));
+        ben.iter(|| a.convolve_with_pad(b));
+    }
+}
+

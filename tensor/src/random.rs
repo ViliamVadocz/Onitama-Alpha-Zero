@@ -8,11 +8,7 @@ where
 {
     fn rand<D: Distribution<T>>(distr: D) -> Self {
         let mut rng = thread_rng();
-        let mut data = [T::default(); X];
-        for elem in data.iter_mut() {
-            *elem = distr.sample(&mut rng);
-        }
-        Self::new(data)
+        Self::new([(); X].map(|()| distr.sample(&mut rng)))
     }
 }
 
@@ -28,4 +24,15 @@ impl<T, const D1: usize, const D2: usize, const D3: usize> RandomTensor<T, { D1 
 where
     T: Default + Copy + Debug,
 {
+}
+
+#[cfg(test)]
+mod benches {
+    use super::*;
+    use test::Bencher;
+
+    #[bench]
+    fn random(ben: &mut Bencher) {
+        ben.iter(|| Tensor3::<f64, 20, 20, 20>::rand(rand_distr::Uniform::new(-1., 1.)));
+    }
 }
