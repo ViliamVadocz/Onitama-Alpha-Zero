@@ -10,16 +10,9 @@ where
     fn new(data: [T; X]) -> Self;
     fn get_data(self) -> [T; X];
     fn get_data_mut(&mut self) -> &mut [T; X];
-    // fn reshape<G: Tensor<T, X>>(self) -> G;
-}
-
-pub fn reshape<T, A, B, const X: usize>(input: A) -> B
-where
-    T: Copy + Default + Debug,
-    A: Tensor<T, X>,
-    B: Tensor<T, X>,
-{
-    B::new(input.get_data())
+    fn reshape<G: Tensor<T, X>>(self) -> G {
+        G::new(self.get_data())
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -42,10 +35,6 @@ where
     fn get_data_mut(&mut self) -> &mut [T; L] {
         &mut self.0
     }
-
-    // fn reshape<G: Tensor<T, L>>(self) -> G {
-    //     G::new(self.0)
-    // }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -70,13 +59,8 @@ where
     fn get_data_mut(&mut self) -> &mut [T; C * R] {
         &mut self.0
     }
-
-    // fn reshape<G: Tensor<T, { R * C }>>(self) -> G {
-    //     G::new(self.0)
-    // }
 }
 
-////////////////////////////////////////////////////////////////////////////////
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Tensor3<T, const D1: usize, const D2: usize, const D3: usize>(
     pub(crate) [T; D1 * D2 * D3],
@@ -102,10 +86,6 @@ where
     fn get_data_mut(&mut self) -> &mut [T; D1 * D2 * D3] {
         &mut self.0
     }
-
-    // fn reshape<G: Tensor<T, { D1 * D2 * D3 }>>(self) -> G {
-    //     G::new(self.0)
-    // }
 }
 
 #[cfg(test)]
@@ -136,13 +116,11 @@ mod tests {
     #[test]
     fn test_reshape() {
         let a = Tensor1::new([0, 1, 2, 3, 4, 4, 5, 6, 7, 9, 10, 11]);
-        #[rustfmt::skip]
-        let b =
-            reshape(
-            reshape::<_, _, Tensor2<_, 2, 6>, 12>(
-            reshape::<_, _, Tensor3<_, 2, 3, 2>, 12>(
-            reshape::<_, _, Tensor2<_, 4, 3>, 12>(a),
-            )));
+        let b = a
+            .reshape::<Tensor2<_, 2, 6>>()
+            .reshape::<Tensor3<_, 2, 3, 2>>()
+            .reshape::<Tensor2<_, 4, 3>>()
+            .reshape();
         assert_eq!(a, b);
     }
 }

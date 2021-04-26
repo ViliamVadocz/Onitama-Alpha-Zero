@@ -17,7 +17,7 @@ mod random;
 
 pub use crate::{
     elementwise::ElementWiseTensor,
-    tensor::{reshape, Matrix, Tensor, Tensor1, Tensor2, Tensor3, Vector},
+    tensor::{Matrix, Tensor, Tensor1, Tensor2, Tensor3, Vector},
 };
 
 #[cfg(feature = "rand")]

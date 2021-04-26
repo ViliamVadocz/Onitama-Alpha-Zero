@@ -244,4 +244,3 @@ mod benches {
         ben.iter(|| a.convolve_with_pad(b));
     }
 }
-
