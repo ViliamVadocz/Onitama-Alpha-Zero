@@ -3,7 +3,7 @@ use super::*;
 pub type Vector<T, const L: usize> = Tensor1<T, L>;
 pub type Matrix<T, const C: usize, const R: usize> = Tensor2<T, C, R>;
 
-pub trait Tensor<T, const X: usize>: Default + Display
+pub trait Tensor<T, const X: usize>: Default + Display + Copy
 where
     T: Default + Copy + Debug,
 {
