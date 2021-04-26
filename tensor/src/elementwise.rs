@@ -16,6 +16,17 @@ where
         }
         self
     }
+
+    /// Map a function onto each element.
+    fn map<F>(mut self, f: F) -> Self
+    where
+        F: Fn(T) -> T,
+    {
+        for elem in self.get_data_mut().iter_mut() {
+            *elem = f(*elem);
+        }
+        self
+    }
 }
 
 impl<T, const L: usize> ElementWiseTensor<T, L> for Tensor1<T, L> where T: Default + Copy + Debug {}
