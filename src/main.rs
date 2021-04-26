@@ -1,32 +1,40 @@
-#![feature(const_generics, const_evaluatable_checked)]
+#![feature(const_generics, const_evaluatable_checked, array_map)]
 #![allow(incomplete_features)]
 
-use tensor::{Tensor, Tensor1, Tensor2, Tensor3, ElementWiseTensor, RandomTensor, rand_distr::Uniform, reshape};
+use tensor::*;
 
-fn main() {
-    #[rustfmt::skip]
-    let a = Tensor1::<i32, 10>::new([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    println!("{}", a);
-    #[rustfmt::skip]
-    let b = Tensor2::<i32, 3, 3>::new([
-        1, 2, 3,
-        4, 5, 6,
-        7, 8, 9,
-    ]);
-    println!("{}", b);
-    #[rustfmt::skip]
-    let c = Tensor3::<i32, 2, 2, 2>::new([
-        0, 1,
-        2, 3,
-
-        4, 5,
-        6, 7,
-    ]);
-    println!("{}", c);
-
-    // println!("{}", a.slice::<3>(4));
-    // println!("{}", b.slice::<2, 2>(1, 1));
-    // println!("{}", c.slice::<2, 1, 1>(0, 1, 1));
-
-    println!("{}", reshape::<_, _, Tensor2<_, 2, 2>, 4>(a.slice::<4>(3)));
+fn ReLU(x: f64) -> f64 {
+    if x < 0.0 {
+        0.0
+    } else {
+        x
+    }
 }
+
+fn forward_pass<
+    const IN_D1: usize,
+    const IN_D2: usize,
+    const IN_D3: usize,
+    const K_D1: usize,
+    const K_D2: usize,
+    const N: usize,
+>(
+    input: Tensor3<f64, IN_D1, IN_D2, IN_D3>,
+    kernels: [Tensor3<f64, K_D1, K_D2, IN_D3>; N],
+    bias: Tensor3<f64, IN_D1, IN_D2, { IN_D3 * N }>,
+) -> Tensor3<f64, IN_D1, IN_D2, { IN_D3 * N }>
+where
+    [(); IN_D1 * IN_D2 * IN_D3]: ,
+    [(); K_D1 * K_D2 * IN_D3]: ,
+    [(); IN_D1 * IN_D2 * (IN_D3 * N)]: ,
+{
+    let conv_out = kernels.map(|kernel| input.convolve_with_pad(kernel));
+    let data = conv_out
+        .map(|out| out.get_data())
+        .iter()
+        .flatten()
+        .collect();
+    Tensor3::new(data)
+}
+
+fn main() {}
