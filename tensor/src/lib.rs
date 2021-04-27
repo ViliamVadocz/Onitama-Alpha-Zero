@@ -5,11 +5,11 @@ extern crate test;
 
 use std::fmt::{Debug, Display};
 
-mod ml;
 mod convolution;
 mod default;
 mod display;
 mod elementwise;
+mod ml;
 mod slice;
 mod tensor;
 

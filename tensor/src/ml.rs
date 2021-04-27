@@ -1,8 +1,10 @@
 use super::*;
 
-use std::fmt::Debug;
-use std::ops::{AddAssign, MulAssign, Add};
+use std::array::IntoIter;
 use std::cmp::PartialOrd;
+use std::fmt::Debug;
+use std::iter::Sum;
+use std::ops::{Add, AddAssign, Mul, MulAssign};
 
 fn relu<T: Default + PartialOrd>(x: T) -> T {
     if x < T::default() {
@@ -12,7 +14,7 @@ fn relu<T: Default + PartialOrd>(x: T) -> T {
     }
 }
 
-impl<T, const D1: usize, const D2: usize, const D3: usize> Tensor3<T, D1, D2, D3> 
+impl<T, const D1: usize, const D2: usize, const D3: usize> Tensor3<T, D1, D2, D3>
 where
     T: Copy + Default + Debug,
     [(); D1 * D2 * D3]: ,
@@ -34,15 +36,23 @@ where
     }
 }
 
-impl<T, const L: usize> Tensor1<T, L> 
+impl<T, const L: usize> Tensor1<T, L>
 where
     T: Copy + Default + Debug,
 {
-    pub fn fully_connected_pass<const N: usize>(self, weights: Tensor2<T, L, N>, biases: Tensor1<T, N>) -> Tensor1<T, N>
+    pub fn fully_connected_pass<const N: usize>(
+        self,
+        weights: [Tensor1<T, L>; N],
+        biases: Tensor1<T, N>,
+    ) -> Tensor1<T, N>
     where
+        T: Add<Output = T> + Mul<Output = T> + Sum<T> + PartialOrd,
         [(); L * N]: ,
     {
-        let mut data = [T::default(); N * L];
-        unimplemented!()
+        let mut data = [T::default(); N];
+        for (elem, row) in data.iter_mut().zip(IntoIter::new(weights)) {
+            *elem = IntoIter::new((self * row).get_data()).sum();
+        }
+        (Tensor1(data) + biases).map(relu)
     }
 }
