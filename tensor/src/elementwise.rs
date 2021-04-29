@@ -50,14 +50,14 @@ macro_rules! impl_op_inner {
         $( where($($predicates:tt)*) )?
         {$method:ident}
     ) => {
-        impl<T, $($generics)*> $bound for $type
+        impl<T, $($generics)*> $bound<&$type> for $type
         where
             T: Default + Copy + Debug + $bound<Output = T>,
             $($($predicates)*)?
         {
             type Output = Self;
 
-            fn $method(mut self, other: Self) -> Self {
+            fn $method(mut self, other: &Self) -> Self {
                 for (elem, &val) in self.0.iter_mut().zip(other.0.iter()) {
                     *elem = $bound::$method(*elem, val);
                 }
@@ -73,12 +73,12 @@ macro_rules! impl_op_assign_inner {
         $( where($($predicates:tt)*) )?
         {$method:ident}
     ) => {
-        impl<T, $($generics)*> $bound for $type
+        impl<T, $($generics)*> $bound<&$type> for $type
         where
             T: Default + Copy + Debug + $bound,
             $($($predicates)*)?
         {
-            fn $method(&mut self, other: Self) {
+            fn $method(&mut self, other: &Self) {
                 for (elem, &val) in self.0.iter_mut().zip(other.0.iter()) {
                     $bound::$method(elem, val);
                 }
@@ -147,7 +147,7 @@ macro_rules! impl_op_assign_3 {
     };
 }
 
-// Implement elementwise operations
+// Implement elementwise operations.
 impl_op_1!(Add, add);
 impl_op_1!(Sub, sub);
 impl_op_1!(Mul, mul);
@@ -181,10 +181,10 @@ mod tests {
     fn elementwise_tensor1() {
         let a = Vector::new([1, 2, 3, 4, 5, 6, 7]);
         let b = Vector::new([7, 6, 5, 4, 3, 2, 1]);
-        assert_eq!(a + b, Vector::new([8; 7]));
-        assert_eq!(a - b, Vector::new([-6, -4, -2, 0, 2, 4, 6]));
-        assert_eq!(a * b, Vector::new([7, 12, 15, 16, 15, 12, 7]));
-        assert_eq!(a / b, Vector::new([0, 0, 0, 1, 1, 3, 7]));
+        assert_eq!(a + &b, Vector::new([8; 7]));
+        assert_eq!(a - &b, Vector::new([-6, -4, -2, 0, 2, 4, 6]));
+        assert_eq!(a * &b, Vector::new([7, 12, 15, 16, 15, 12, 7]));
+        assert_eq!(a / &b, Vector::new([0, 0, 0, 1, 1, 3, 7]));
         assert_eq!(a.scale(3), Vector::new([3, 6, 9, 12, 15, 18, 21]));
     }
 
@@ -192,10 +192,10 @@ mod tests {
     fn elementwise_tensor2() {
         let a: Matrix<_, 3, 3> = Matrix::new([1, 2, 3, 4, 5, 6, 7, 8, 9]);
         let b: Matrix<_, 3, 3> = Matrix::new([9, 8, 7, 6, 5, 4, 3, 2, 1]);
-        assert_eq!(a + b, Matrix::new([10; 9]));
-        assert_eq!(a - b, Matrix::new([-8, -6, -4, -2, 0, 2, 4, 6, 8]));
-        assert_eq!(a * b, Matrix::new([9, 16, 21, 24, 25, 24, 21, 16, 9]));
-        assert_eq!(a / b, Matrix::new([0, 0, 0, 0, 1, 1, 2, 4, 9]));
+        assert_eq!(a + &b, Matrix::new([10; 9]));
+        assert_eq!(a - &b, Matrix::new([-8, -6, -4, -2, 0, 2, 4, 6, 8]));
+        assert_eq!(a * &b, Matrix::new([9, 16, 21, 24, 25, 24, 21, 16, 9]));
+        assert_eq!(a / &b, Matrix::new([0, 0, 0, 0, 1, 1, 2, 4, 9]));
         assert_eq!(a.scale(3), Matrix::new([3, 6, 9, 12, 15, 18, 21, 24, 27]));
     }
 
@@ -203,10 +203,10 @@ mod tests {
     fn elementwise_tensor3() {
         let a: Tensor3<_, 2, 2, 2> = Tensor3::new([1, 2, 3, 4, 5, 6, 7, 8]);
         let b: Tensor3<_, 2, 2, 2> = Tensor3::new([8, 7, 6, 5, 4, 3, 2, 1]);
-        assert_eq!(a + b, Tensor3::new([9; 8]));
-        assert_eq!(a - b, Tensor3::new([-7, -5, -3, -1, 1, 3, 5, 7]));
-        assert_eq!(a * b, Tensor3::new([8, 14, 18, 20, 20, 18, 14, 8]));
-        assert_eq!(a / b, Tensor3::new([0, 0, 0, 0, 1, 2, 3, 8]));
+        assert_eq!(a + &b, Tensor3::new([9; 8]));
+        assert_eq!(a - &b, Tensor3::new([-7, -5, -3, -1, 1, 3, 5, 7]));
+        assert_eq!(a * &b, Tensor3::new([8, 14, 18, 20, 20, 18, 14, 8]));
+        assert_eq!(a / &b, Tensor3::new([0, 0, 0, 0, 1, 2, 3, 8]));
         assert_eq!(a.scale(3), Tensor3::new([3, 6, 9, 12, 15, 18, 21, 24]));
     }
 
@@ -214,10 +214,10 @@ mod tests {
     fn elementwise_assign_tensor1() {
         let a = Vector::new([1, 2, 3, 4, 5, 6, 7]);
         let mut b = a;
-        b += Vector::new([4; 7]);
-        b *= Vector::new([2; 7]);
-        b /= Vector::new([2; 7]);
-        b -= Vector::new([4; 7]);
+        b += &Vector::new([4; 7]);
+        b *= &Vector::new([2; 7]);
+        b /= &Vector::new([2; 7]);
+        b -= &Vector::new([4; 7]);
         assert_eq!(a, b);
     }
 
@@ -225,10 +225,10 @@ mod tests {
     fn elementwise_assign_tensor2() {
         let a: Matrix<_, 3, 3> = Matrix::new([1, 2, 3, 4, 5, 6, 7, 8, 9]);
         let mut b = a;
-        b += Matrix::new([4; 9]);
-        b *= Matrix::new([2; 9]);
-        b /= Matrix::new([2; 9]);
-        b -= Matrix::new([4; 9]);
+        b += &Matrix::new([4; 9]);
+        b *= &Matrix::new([2; 9]);
+        b /= &Matrix::new([2; 9]);
+        b -= &Matrix::new([4; 9]);
         assert_eq!(a, b);
     }
 
@@ -236,10 +236,10 @@ mod tests {
     fn elementwise_assign_tensor3() {
         let a: Tensor3<_, 2, 2, 2> = Tensor3::new([1, 2, 3, 4, 5, 6, 7, 8]);
         let mut b = a;
-        b += Tensor3::new([4; 8]);
-        b *= Tensor3::new([2; 8]);
-        b /= Tensor3::new([2; 8]);
-        b -= Tensor3::new([4; 8]);
+        b += &Tensor3::new([4; 8]);
+        b *= &Tensor3::new([2; 8]);
+        b /= &Tensor3::new([2; 8]);
+        b -= &Tensor3::new([4; 8]);
         assert_eq!(a, b);
     }
 
@@ -262,7 +262,7 @@ mod benches {
     fn elementwise_op(ben: &mut Bencher) {
         let a = Tensor3::<f64, 20, 20, 20>::rand(rand_distr::Uniform::new(-1., 1.));
         let b = Tensor3::<f64, 20, 20, 20>::rand(rand_distr::Uniform::new(-1., 1.));
-        ben.iter(|| a * b);
+        ben.iter(|| a * &b);
     }
 
     #[bench]

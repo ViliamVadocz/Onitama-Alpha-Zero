@@ -21,8 +21,8 @@ where
 {
     pub fn convolution_pass<const N: usize, const K_D1: usize, const K_D2: usize>(
         self,
-        kernels: [Tensor3<T, K_D1, K_D2, D3>; N],
-        biases: Tensor3<T, D1, D2, N>,
+        kernels: &[Tensor3<T, K_D1, K_D2, D3>; N],
+        biases: &Tensor3<T, D1, D2, N>,
     ) -> Tensor3<T, D1, D2, N>
     where
         T: AddAssign + MulAssign + Add<Output = T> + PartialOrd,
@@ -30,7 +30,7 @@ where
         [(); K_D1 * K_D2 * D3]: ,
         [(); D1 * D2 * N]: ,
     {
-        let conv_out = kernels.map(|kernel| self.convolve_with_pad(kernel).get_data());
+        let conv_out = kernels.map(|kernel| self.convolve_with_pad(&kernel).get_data());
         let data = unsafe { std::mem::transmute_copy(&conv_out) };
         (Tensor3::new(data) + biases).map(relu)
     }
@@ -42,15 +42,15 @@ where
 {
     pub fn fully_connected_pass<const N: usize>(
         self,
-        weights: [Tensor1<T, L>; N],
-        biases: Tensor1<T, N>,
+        weights: &[Tensor1<T, L>; N],
+        biases: &Tensor1<T, N>,
     ) -> Tensor1<T, N>
     where
         T: Add<Output = T> + Mul<Output = T> + Sum<T> + PartialOrd,
         [(); L * N]: ,
     {
         let mut data = [T::default(); N];
-        for (elem, row) in data.iter_mut().zip(IntoIter::new(weights)) {
+        for (elem, row) in data.iter_mut().zip(weights.iter()) {
             *elem = IntoIter::new((self * row).get_data()).sum();
         }
         (Tensor1(data) + biases).map(relu)

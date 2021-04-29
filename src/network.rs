@@ -43,13 +43,13 @@ impl Network {
 
     pub fn feed_forward(&self, input: Tensor3<f64, 5, 5, 8>) -> Tensor1<f64, 626> {
         input
-            .convolution_pass(*self.l1_kernels, *self.l1_biases) 
-            .convolution_pass(*self.l2_kernels, *self.l2_biases)
-            .convolution_pass(*self.l3_kernels, *self.l3_biases)
-            .convolution_pass(*self.l4_kernels, *self.l4_biases)
+            .convolution_pass(&self.l1_kernels, &self.l1_biases)
+            .convolution_pass(&self.l2_kernels, &self.l2_biases)
+            .convolution_pass(&self.l3_kernels, &self.l3_biases)
+            .convolution_pass(&self.l4_kernels, &self.l4_biases)
             .reshape::<Tensor1<_, 1600>>()
-            .fully_connected_pass(*self.l5_weights, *self.l5_biases)
-            .fully_connected_pass(*self.l6_weights, *self.l6_biases)
+            .fully_connected_pass(&self.l5_weights, &self.l5_biases)
+            .fully_connected_pass(&self.l6_weights, &self.l6_biases)
     }
 
     pub fn back_prop(&mut self, training: Tensor1<f64, 626>) {

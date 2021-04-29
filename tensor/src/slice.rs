@@ -5,7 +5,7 @@ where
     T: Default + Copy + Debug,
 {
     /// Get a slice of the tensor.
-    pub fn slice<const NEW_L: usize>(self, offset: usize) -> Tensor1<T, NEW_L> {
+    pub fn slice<const NEW_L: usize>(&self, offset: usize) -> Tensor1<T, NEW_L> {
         assert!(offset + NEW_L <= L);
         let mut data = [T::default(); NEW_L];
         for (elem, &val) in data.iter_mut().zip(self.0[offset..(offset + NEW_L)].iter()) {
@@ -17,7 +17,7 @@ where
     /// Get a slice with padding if needed.
     /// Allow slices which do not entirely fit inside the tensor.
     /// Padded with the default value.
-    pub fn slice_with_pad<const NEW_L: usize>(self, offset: isize) -> Tensor1<T, NEW_L> {
+    pub fn slice_with_pad<const NEW_L: usize>(&self, offset: isize) -> Tensor1<T, NEW_L> {
         let mut data = [T::default(); NEW_L];
         for (i, elem) in data.iter_mut().enumerate() {
             let i = i as isize + offset;
@@ -41,7 +41,7 @@ where
 {
     /// Get a slice of the tensor.
     pub fn slice<const NEW_C: usize, const NEW_R: usize>(
-        self,
+        &self,
         col_offset: usize,
         row_offset: usize,
     ) -> Tensor2<T, NEW_C, NEW_R>
@@ -63,7 +63,7 @@ where
     /// Allow slices which do not entirely fit inside the tensor.
     /// Padded with the default value.
     pub fn slice_with_pad<const NEW_C: usize, const NEW_R: usize>(
-        self,
+        &self,
         col_offset: isize,
         row_offset: isize,
     ) -> Tensor2<T, NEW_C, NEW_R>
@@ -97,7 +97,7 @@ where
 {
     /// Get a slice of the tensor.
     pub fn slice<const NEW_D1: usize, const NEW_D2: usize, const NEW_D3: usize>(
-        self,
+        &self,
         d1_offset: usize,
         d2_offset: usize,
         d3_offset: usize,
@@ -122,7 +122,7 @@ where
     /// Allow slices which do not entirely fit inside the tensor.
     /// Padded with the default value.
     pub fn slice_with_pad<const NEW_D1: usize, const NEW_D2: usize, const NEW_D3: usize>(
-        self,
+        &self,
         d1_offset: isize,
         d2_offset: isize,
         d3_offset: isize,
