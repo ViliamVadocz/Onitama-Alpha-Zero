@@ -44,16 +44,28 @@ where
 }
 
 // Define macros to help implement all elementwise operation traits.
-macro_rules! impl_op_inner {
+macro_rules! impl_op {
     (
+        impl $generics:tt $type:ty
+        where $predicates:tt
+        {
+            $( op($bound:ident, $method:ident) )*
+            $( op_a($bound_assign:ident, $method_assign:ident) )*
+        }
+    ) => (
+        $(impl_op! { @op impl $generics $bound for $type where $predicates {$method} })*
+        $(impl_op! { @op_a impl $generics $bound_assign for $type where $predicates {$method_assign} })*
+    );
+
+    (@op
         impl[$($generics:tt)*] $bound:ident for $type:ty
-        $( where($($predicates:tt)*) )?
+        where($($predicates:tt)*)
         {$method:ident}
-    ) => {
+    ) => (
         impl<T, $($generics)*> $bound<&$type> for $type
         where
             T: Default + Copy + Debug + $bound<Output = T>,
-            $($($predicates)*)?
+            $($predicates)*
         {
             type Output = Self;
 
@@ -64,19 +76,17 @@ macro_rules! impl_op_inner {
                 self
             }
         }
-    }
-}
+    );
 
-macro_rules! impl_op_assign_inner {
-    (
+    (@op_a
         impl[$($generics:tt)*] $bound:ident for $type:ty
-        $( where($($predicates:tt)*) )?
+        where($($predicates:tt)*)
         {$method:ident}
-    ) => {
+    ) => (
         impl<T, $($generics)*> $bound<&$type> for $type
         where
             T: Default + Copy + Debug + $bound,
-            $($($predicates)*)?
+            $($predicates)*
         {
             fn $method(&mut self, other: &Self) {
                 for (elem, &val) in self.0.iter_mut().zip(other.0.iter()) {
@@ -84,94 +94,54 @@ macro_rules! impl_op_assign_inner {
                 }
             }
         }
-    }
-}
-
-macro_rules! impl_op_1 {
-    ($bound:ident, $method:ident) => {
-        impl_op_inner! {
-            impl[const L: usize] $bound for Tensor1<T, L> {
-                $method
-            }
-        }
-    };
-}
-
-macro_rules! impl_op_2 {
-    ($bound:ident, $method:ident) => {
-        impl_op_inner! {
-            impl[const C: usize, const R: usize] $bound for Tensor2<T, C, R>
-            where( [(); C * R]: , )
-            {$method}
-        }
-    };
-}
-
-macro_rules! impl_op_3 {
-    ($bound:ident, $method:ident) => {
-        impl_op_inner!{
-            impl[const D1: usize, const D2: usize, const D3: usize] $bound for Tensor3<T, D1, D2, D3>
-            where( [(); D1 * D2 * D3]: , )
-            {$method}
-        }
-    };
-}
-
-macro_rules! impl_op_assign_1 {
-    ($bound:ident, $method:ident) => {
-        impl_op_assign_inner! {
-            impl[const L: usize] $bound for Tensor1<T, L>
-            where( )
-            {$method}
-        }
-    };
-}
-
-macro_rules! impl_op_assign_2 {
-    ($bound:ident, $method:ident) => {
-        impl_op_assign_inner! {
-            impl[const C: usize, const R: usize] $bound for Tensor2<T, C, R>
-            where( [(); C * R]: , )
-            {$method}
-        }
-    };
-}
-
-macro_rules! impl_op_assign_3 {
-    ($bound:ident, $method:ident) => {
-        impl_op_assign_inner!{
-            impl[const D1: usize, const D2: usize, const D3: usize] $bound for Tensor3<T, D1, D2, D3>
-            where( [(); D1 * D2 * D3]: , )
-            {$method}
-        }
-    };
+    );
 }
 
 // Implement elementwise operations.
-impl_op_1!(Add, add);
-impl_op_1!(Sub, sub);
-impl_op_1!(Mul, mul);
-impl_op_1!(Div, div);
-impl_op_assign_1!(AddAssign, add_assign);
-impl_op_assign_1!(SubAssign, sub_assign);
-impl_op_assign_1!(MulAssign, mul_assign);
-impl_op_assign_1!(DivAssign, div_assign);
-impl_op_2!(Add, add);
-impl_op_2!(Sub, sub);
-impl_op_2!(Mul, mul);
-impl_op_2!(Div, div);
-impl_op_assign_2!(AddAssign, add_assign);
-impl_op_assign_2!(SubAssign, sub_assign);
-impl_op_assign_2!(MulAssign, mul_assign);
-impl_op_assign_2!(DivAssign, div_assign);
-impl_op_3!(Add, add);
-impl_op_3!(Sub, sub);
-impl_op_3!(Mul, mul);
-impl_op_3!(Div, div);
-impl_op_assign_3!(AddAssign, add_assign);
-impl_op_assign_3!(SubAssign, sub_assign);
-impl_op_assign_3!(MulAssign, mul_assign);
-impl_op_assign_3!(DivAssign, div_assign);
+impl_op! {
+    impl[const L: usize] Tensor1<T, L>
+    where (
+    ) {
+        op(Add, add)
+        op(Sub, sub)
+        op(Mul, mul)
+        op(Div, div)
+        op_a(AddAssign, add_assign)
+        op_a(SubAssign, sub_assign)
+        op_a(MulAssign, mul_assign)
+        op_a(DivAssign, div_assign)
+    }
+}
+impl_op! {
+    impl[const C: usize, const R: usize] Tensor2<T, C, R>
+    where (
+        [(); C * R]: ,
+    ) {
+        op(Add, add)
+        op(Sub, sub)
+        op(Mul, mul)
+        op(Div, div)
+        op_a(AddAssign, add_assign)
+        op_a(SubAssign, sub_assign)
+        op_a(MulAssign, mul_assign)
+        op_a(DivAssign, div_assign)
+    }
+}
+impl_op! {
+    impl[const D1: usize, const D2: usize, const D3: usize] Tensor3<T, D1, D2, D3>
+    where (
+        [(); D1 * D2 * D3]: ,
+    ) {
+        op(Add, add)
+        op(Sub, sub)
+        op(Mul, mul)
+        op(Div, div)
+        op_a(AddAssign, add_assign)
+        op_a(SubAssign, sub_assign)
+        op_a(MulAssign, mul_assign)
+        op_a(DivAssign, div_assign)
+    }
+}
 
 #[cfg(test)]
 mod tests {
