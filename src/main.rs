@@ -3,12 +3,21 @@
 
 mod network;
 
-use tensor::*;
 use network::Network;
+use std::thread;
+use tensor::*;
+
+fn run() {
+    let test_net = Network::init();
+    let out = test_net.feed_forward(Tensor3::rand(rand_distr::Uniform::new(0., 1.)));
+    println!("{}", out)
+}
 
 fn main() {
-    let test_net = Network::init();
-    // THIS OVERFLOWS THE STACK!
-    let out = test_net.feed_forward(Tensor3::rand(rand_distr::Uniform::new(0., 1.)));
-    println!("{}", out);
+    thread::Builder::new()
+        .stack_size(1024 * 1024 * 1024 * 32)
+        .spawn(run)
+        .unwrap()
+        .join()
+        .unwrap();
 }
