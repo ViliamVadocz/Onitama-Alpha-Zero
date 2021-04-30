@@ -1,5 +1,8 @@
 #![feature(const_generics, const_evaluatable_checked, array_map)]
+#![feature(thread_spawn_unchecked)]
 #![allow(incomplete_features)]
+#![feature(test)]
+extern crate test;
 
 mod network;
 
