@@ -19,7 +19,7 @@ pub struct Network {
     l6_biases: Tensor1<f64, 626>,
     // 626 outputs
     // 625 for each from-to move combination
-    // 1 output for prediction
+    // 1 output for board evaluation
 }
 
 impl Network {
@@ -43,28 +43,44 @@ impl Network {
         }
     }
 
-    pub fn feed_forward(&self, input: Tensor3<f64, 5, 5, 8>) -> Tensor1<f64, 626> {
-        input
+    pub fn feed_forward(&self, input: Tensor3<f64, 5, 5, 8>) -> (Tensor1<f64, 625>, f64) {
+        let (vec, board_eval) = input
             .convolution_pass(&self.l1_kernels, &self.l1_biases)
+            .map(relu)
             .convolution_pass(&self.l2_kernels, &self.l2_biases)
+            .map(relu)
             .convolution_pass(&self.l3_kernels, &self.l3_biases)
+            .map(relu)
             .convolution_pass(&self.l4_kernels, &self.l4_biases)
+            .map(relu)
             .reshape::<Tensor1<_, 1600>>()
             .fully_connected_pass(&self.l5_weights, &self.l5_biases)
+            .map(relu)
             .fully_connected_pass(&self.l6_weights, &self.l6_biases)
+            .split_last();
+        (vec.softmax(), 2. * sig(board_eval) - 1.)
     }
 
-    pub fn back_prop(&mut self, training: Tensor1<f64, 626>) {
-        unimplemented!()
+    pub fn back_prop(
+        &mut self,
+        input: Tensor3<f64, 5, 5, 8>,
+        training_vec: Tensor1<f64, 625>,
+        training_eval: f64,
+    ) {
+        let (probability_vec, board_eval) = self.feed_forward(input);
+        let cost = (training_eval - board_eval).powi(2) - (probability_vec.map(f64::ln) * &training_vec).sum();
+
+        // TODO
+        // https://eli.thegreenplace.net/2016/the-softmax-function-and-its-derivative/
+        // https://github.com/frandelgado/mytorch/blob/master/nets/activations.py
     }
 }
 
 #[cfg(test)]
 mod benches {
     use super::*;
-    use test::Bencher;
     use std::thread;
-    use std::marker::Send;
+    use test::Bencher;
 
     fn with_larger_stack<'a, T, F>(f: F)
     where
@@ -98,4 +114,3 @@ mod benches {
         })
     }
 }
-

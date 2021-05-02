@@ -12,8 +12,8 @@ use tensor::*;
 
 fn run() {
     let test_net = Network::init();
-    let out = test_net.feed_forward(Tensor3::rand(rand_distr::Uniform::new(0., 1.)));
-    println!("{}", out)
+    let (vec, eval) = test_net.feed_forward(Tensor3::rand(rand_distr::Uniform::new(0., 1.)));
+    println!("{} {}", vec, eval)
 }
 
 fn main() {

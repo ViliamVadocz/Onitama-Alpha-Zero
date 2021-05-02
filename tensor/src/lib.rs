@@ -18,6 +18,7 @@ mod random;
 
 pub use crate::{
     elementwise::ElementWiseTensor,
+    ml::{relu, sig},
     tensor::{Matrix, Tensor, Tensor1, Tensor2, Tensor3, Vector},
 };
 
