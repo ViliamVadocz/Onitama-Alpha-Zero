@@ -11,7 +11,9 @@ where
     where
         T: MulAssign,
     {
-        self.get_data_mut().iter_mut().for_each(|elem| *elem *= scalar);
+        self.get_data_mut()
+            .iter_mut()
+            .for_each(|elem| *elem *= scalar);
         self
     }
 
@@ -20,7 +22,9 @@ where
     where
         F: Fn(T) -> T,
     {
-        self.get_data_mut().iter_mut().for_each(|elem| *elem = f(*elem));
+        self.get_data_mut()
+            .iter_mut()
+            .for_each(|elem| *elem = f(*elem));
         self
     }
 }
