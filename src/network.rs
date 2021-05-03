@@ -73,6 +73,7 @@ impl Network {
         // TODO
         // https://eli.thegreenplace.net/2016/the-softmax-function-and-its-derivative/
         // https://github.com/frandelgado/mytorch/blob/master/nets/activations.py
+        // https://medium.com/@pavisj/convolutions-and-backpropagations-46026a8f5d2c
     }
 }
 
