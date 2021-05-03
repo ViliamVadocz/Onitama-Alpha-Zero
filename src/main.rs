@@ -5,6 +5,8 @@
 extern crate test;
 
 mod network;
+mod alpha_zero;
+mod convert;
 
 use network::Network;
 use std::thread;
