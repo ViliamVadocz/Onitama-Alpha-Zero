@@ -68,7 +68,8 @@ impl Network {
         training_eval: f64,
     ) {
         let (probability_vec, board_eval) = self.feed_forward(input);
-        let cost = (training_eval - board_eval).powi(2) - (probability_vec.map(f64::ln) * &training_vec).sum();
+        let cost = (training_eval - board_eval).powi(2)
+            - (probability_vec.map(f64::ln) * &training_vec).sum();
 
         // TODO
         // https://eli.thegreenplace.net/2016/the-softmax-function-and-its-derivative/

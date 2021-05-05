@@ -11,9 +11,9 @@ extern crate test;
 
 mod alpha_zero;
 mod convert;
+mod mcts;
 mod network;
 mod rand_game;
-mod mcts;
 
 use network::Network;
 use std::thread;
