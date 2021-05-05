@@ -9,10 +9,10 @@ use rand::{
 use std::collections::HashMap;
 use tensor::*;
 
-const EXPLORATION: f64 = 1.0;
+const EXPLORATION: f64 = 0.5;
 
 pub struct Node {
-    game: Game,
+    pub game: Game,
     policy: f64,
     expected_reward: f64,
     visited_count: u32,
@@ -20,15 +20,20 @@ pub struct Node {
 }
 
 impl Node {
-    /// Create a root node with a random game.
-    pub fn init() -> Node {
+    /// Create a root node.
+    pub fn from(game: Game) -> Node {
         Node {
-            game: random_game(),
+            game,
             expected_reward: 0.,
             policy: 1.,
             visited_count: 0,
             children: None,
         }
+    }
+
+    /// Create a root node with a random game.
+    pub fn random() -> Node {
+        Node::from(random_game())
     }
 
     /// Get the improved policy after MCTS.
@@ -41,14 +46,28 @@ impl Node {
     }
 
     /// Pick a random action based on policy acquired from MCTS.
-    pub fn step(self) -> Node {
+    pub fn pick_move(&self) -> usize {
         let improved_policy = self.improved_policy();
-
         let mut rng = thread_rng();
         let distr = WeightedIndex::new(&improved_policy).unwrap();
-        let selected_index = distr.sample(&mut rng);
+        distr.sample(&mut rng)
+    }
 
-        self.children.unwrap().remove(&selected_index).unwrap()
+    /// Return a child of this Node corresponding to the given action index.
+    pub fn step(self, move_index: usize) -> Node {
+        match self.children {
+            Some(mut children) => children.remove(&move_index).unwrap(),
+            None => {
+                for game in self.game.forward() {
+                    let from = game.my & !game.other;
+                    let to = game.other & !game.my;
+                    if move_index == (from * 25 + to) as usize {
+                        return Node::from(game);
+                    }
+                }
+                unreachable!()
+            }
+        }
     }
 
     /// Use neural network to guide Monte Carlo tree search.
@@ -78,7 +97,7 @@ impl Node {
                 let node = Node {
                     game,
                     policy: policy[move_index],
-                    expected_reward: 0.0,
+                    expected_reward: 0.,
                     visited_count: 0,
                     children: None,
                 };
