@@ -15,15 +15,30 @@ mod mcts;
 mod network;
 mod rand_game;
 
+use alpha_zero::train_network;
 use network::Network;
 use std::thread;
-use tensor::*;
 
 fn run() {
-    let test_net = Network::init();
-    let (vec, eval) = test_net.feed_forward(Tensor3::rand(rand_distr::Uniform::new(0., 1.)));
-    println!("{} {}", vec, eval)
+    let mut network = Network::init();
+    loop {
+        train_network(&mut network);
+        // TODO save network to file.
+    }
 }
+
+// TODO
+// - Saving to file
+// - Back prop
+// - Logging
+// - Testing
+// - Optimizing (single thread, no gpu)
+// - Loading from file
+// - Litama support
+// - Optimizing (multithreading)
+// - Optimizing (gpu)
+// - Playing around with hyperparameters
+// - README
 
 fn main() {
     thread::Builder::new()
