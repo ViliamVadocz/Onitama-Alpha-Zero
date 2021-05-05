@@ -7,6 +7,9 @@ use tensor::*;
 // Self-play
 const GAMES_PER_BATCH: u32 = 500;
 const ROLLOUTS_PER_MOVE: u32 = 100;
+// Training
+const PIT_GAMES: u32 = 100;
+const WIN_RATE_THRESHOLD: f64 = 0.55;
 
 struct IncompleteTrainingExample {
     game: Game,
@@ -62,3 +65,61 @@ fn self_play(network: &Network) -> Vec<TrainingExample> {
     training
 }
 
+struct PitResult {
+    wins: u32,
+    losses: u32,
+}
+
+impl PitResult {
+    pub fn win_rate(&self) -> f64 {
+        self.wins as f64 / (self.wins + self.losses) as f64
+    }
+}
+
+/// Pits two networks against each other.
+/// Counts wins and losses of the new network.
+fn pit(new: &Network, old: &Network) -> PitResult {
+    let mut wins = 0;
+    let mut losses = 0;
+
+    for _ in 0..PIT_GAMES {
+        let mut game = random_game();
+        let mut my_turn = random();
+        let mut my_node = Node::from(game);
+        let mut opp_node = Node::from(game);
+        while !game.is_loss() {
+            if my_turn {
+                for _ in 0..ROLLOUTS_PER_MOVE {
+                    my_node.rollout(new);
+                }
+                let move_index = my_node.pick_move();
+                my_node = my_node.step(move_index);
+                opp_node = opp_node.step(move_index);
+                game = my_node.game;
+            } else {
+                for _ in 0..ROLLOUTS_PER_MOVE {
+                    opp_node.rollout(old);
+                }
+                let move_index = opp_node.pick_move();
+                opp_node = opp_node.step(move_index);
+                my_node = my_node.step(move_index);
+                game = opp_node.game;
+            }
+            my_turn = !my_turn;
+        }
+        if my_turn {
+            losses += 1;
+        } else {
+            wins += 1;
+        }
+    }
+
+    PitResult {
+        wins,
+        losses,
+    }
+}
+
+fn train_network(network: &mut Network) {
+    
+}
