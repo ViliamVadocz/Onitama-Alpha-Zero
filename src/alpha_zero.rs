@@ -1,8 +1,9 @@
 use crate::convert::game_to_input;
 use crate::network::Network;
 use crate::rand_game::random_game;
+use std::collections::HashMap;
+use rand::{thread_rng, distributions::{WeightedIndex, Distribution}};
 use onitama_move_gen::gen::Game;
-use std::collections::{hash_map::Entry, HashMap};
 use tensor::*;
 
 const EXPLORATION: f64 = 1.0;
@@ -17,7 +18,7 @@ pub struct Node {
 
 impl Node {
     /// Create a root node with a random game.
-    pub fn new() -> Node {
+    pub fn init() -> Node {
         Node {
             game: random_game(),
             expected_reward: 0.,
@@ -25,6 +26,26 @@ impl Node {
             visited_count: 0,
             children: None,
         }
+    }
+
+    /// Get the improved policy after MCTS.
+    pub fn improved_policy(&self) -> [f64; 625] {
+        let mut policy = [0.; 625];
+        for (&move_index, child) in self.children.as_ref().unwrap() {
+            policy[move_index] = child.expected_reward;
+        }
+        policy
+    }
+
+    /// Pick a random action based on policy acquired from MCTS.
+    pub fn step(self) -> Node {
+        let improved_policy = self.improved_policy();
+
+        let mut rng = thread_rng();
+        let distr = WeightedIndex::new(&improved_policy).unwrap();
+        let selected_index = distr.sample(&mut rng);
+
+        self.children.unwrap().remove(&selected_index).unwrap()
     }
 
     /// Use neural network to guide Monte Carlo tree search.
