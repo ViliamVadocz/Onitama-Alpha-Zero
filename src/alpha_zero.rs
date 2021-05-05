@@ -1,5 +1,5 @@
-use crate::{mcts::Node, rand_game::random_game};
 use crate::network::Network;
+use crate::{convert::game_to_input, mcts::Node, rand_game::random_game};
 use onitama_move_gen::gen::Game;
 use rand::random;
 use tensor::*;
@@ -21,7 +21,7 @@ impl IncompleteTrainingExample {
         TrainingExample {
             game: self.game,
             improved_policy: self.improved_policy,
-            result
+            result,
         }
     }
 }
@@ -41,7 +41,9 @@ fn self_play(network: &Network) -> Vec<TrainingExample> {
         // Create and play out a game while keeping track of examples.
         let mut node = Node::random();
         loop {
-            if node.game.is_loss() { break; }
+            if node.game.is_loss() {
+                break;
+            }
             for _ in 0..ROLLOUTS_PER_MOVE {
                 node.rollout(network);
             }
@@ -51,7 +53,7 @@ fn self_play(network: &Network) -> Vec<TrainingExample> {
             });
             let move_index = node.pick_move();
             node = node.step(move_index);
-        };
+        }
 
         // Go through incomplete examples and fill in the game result.
         let mut val = 1.;
@@ -59,7 +61,7 @@ fn self_play(network: &Network) -> Vec<TrainingExample> {
             training.push(example.update_result(val));
             // Changing player perspective.
             val = -val;
-        } 
+        }
     }
 
     training
@@ -114,12 +116,23 @@ fn pit(new: &Network, old: &Network) -> PitResult {
         }
     }
 
-    PitResult {
-        wins,
-        losses,
-    }
+    PitResult { wins, losses }
 }
 
-fn train_network(network: &mut Network) {
-    
+pub fn train_network(network: &mut Network) {
+    loop {
+        let training = self_play(&network);
+        let mut new_network = *network;
+        for example in training.into_iter() {
+            new_network.back_prop(
+                game_to_input(&example.game),
+                example.improved_policy,
+                example.result,
+            );
+        }
+        if pit(&new_network, &network).win_rate() > WIN_RATE_THRESHOLD {
+            *network = new_network;
+            return;
+        }
+    }
 }

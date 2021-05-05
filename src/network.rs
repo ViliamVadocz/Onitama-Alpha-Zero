@@ -2,6 +2,7 @@ use tensor::*;
 
 const LEARNING_RATE: f64 = 0.001;
 
+#[derive(Clone, Copy)]
 pub struct Network {
     // Padded convolution layers.
     l1_kernels: [Tensor3<f64, 3, 3, 8>; 64],
