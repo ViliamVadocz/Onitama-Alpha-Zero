@@ -13,6 +13,7 @@ mod alpha_zero;
 mod convert;
 mod network;
 mod rand_game;
+mod mcts;
 
 use network::Network;
 use std::thread;
