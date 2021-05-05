@@ -90,6 +90,7 @@ name = "onitama-alpha-zero"
 version = "0.1.0"
 dependencies = [
  "onitama_move_gen",
+ "rand",
  "tensor",
 ]
 
