@@ -1,12 +1,18 @@
-#![feature(const_generics, const_evaluatable_checked, array_map)]
-#![feature(thread_spawn_unchecked)]
+#![feature(
+    const_generics,
+    const_evaluatable_checked,
+    array_map,
+    thread_spawn_unchecked,
+    entry_insert
+)]
 #![allow(incomplete_features)]
 #![feature(test)]
 extern crate test;
 
-mod network;
 mod alpha_zero;
 mod convert;
+mod network;
+mod rand_game;
 
 use network::Network;
 use std::thread;
