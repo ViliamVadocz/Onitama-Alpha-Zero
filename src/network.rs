@@ -1,8 +1,22 @@
+use std::array::IntoIter;
+use std::fs;
 use tensor::*;
 
 const LEARNING_RATE: f64 = 0.001;
+const NETWORK_SIZE: usize = 3 * 3 * 8 * 64
+    + 5 * 5 * 64
+    + 3 * 3 * 64 * 64
+    + 5 * 5 * 64
+    + 3 * 3 * 64 * 64
+    + 5 * 5 * 64
+    + 3 * 3 * 64 * 64
+    + 5 * 5 * 64
+    + 1600 * 800
+    + 800
+    + 800 * 626
+    + 626;
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Network {
     // Padded convolution layers.
     l1_kernels: [Tensor3<f64, 3, 3, 8>; 64],
@@ -79,27 +93,113 @@ impl Network {
     }
 }
 
+impl Network {
+    fn get_save_data(&self) -> Vec<f64> {
+        let mut data = Vec::with_capacity(NETWORK_SIZE);
+
+        // Convolutional layers.
+        for tensor in self.l1_kernels.iter() {
+            data.extend(IntoIter::new(tensor.get_data()));
+        }
+        data.extend(IntoIter::new(self.l1_biases.get_data()));
+        for tensor in self.l2_kernels.iter() {
+            data.extend(IntoIter::new(tensor.get_data()));
+        }
+        data.extend(IntoIter::new(self.l2_biases.get_data()));
+        for tensor in self.l3_kernels.iter() {
+            data.extend(IntoIter::new(tensor.get_data()));
+        }
+        data.extend(IntoIter::new(self.l3_biases.get_data()));
+        for tensor in self.l4_kernels.iter() {
+            data.extend(IntoIter::new(tensor.get_data()));
+        }
+        data.extend(IntoIter::new(self.l4_biases.get_data()));
+        // Fully connected layers.
+        for tensor in self.l5_weights.iter() {
+            data.extend(IntoIter::new(tensor.get_data()));
+        }
+        data.extend(IntoIter::new(self.l5_biases.get_data()));
+        for tensor in self.l6_weights.iter() {
+            data.extend(IntoIter::new(tensor.get_data()));
+        }
+        data.extend(IntoIter::new(self.l6_biases.get_data()));
+
+        data
+    }
+
+    fn from_save_data(data: Vec<f64>) -> Network {
+        assert_eq!(data.len(), NETWORK_SIZE);
+        let mut iter = data.into_iter();
+        Network {
+            // Padded convolution layers.
+            l1_kernels: [(); 64]
+                .map(|()| Tensor3::new([(); 3 * 3 * 8].map(|()| iter.next().unwrap()))),
+            l1_biases: Tensor3::new([(); 5 * 5 * 64].map(|()| iter.next().unwrap())),
+            l2_kernels: [(); 64]
+                .map(|()| Tensor3::new([(); 3 * 3 * 64].map(|()| iter.next().unwrap()))),
+            l2_biases: Tensor3::new([(); 5 * 5 * 64].map(|()| iter.next().unwrap())),
+            l3_kernels: [(); 64]
+                .map(|()| Tensor3::new([(); 3 * 3 * 64].map(|()| iter.next().unwrap()))),
+            l3_biases: Tensor3::new([(); 5 * 5 * 64].map(|()| iter.next().unwrap())),
+            l4_kernels: [(); 64]
+                .map(|()| Tensor3::new([(); 3 * 3 * 64].map(|()| iter.next().unwrap()))),
+            l4_biases: Tensor3::new([(); 5 * 5 * 64].map(|()| iter.next().unwrap())),
+            // Fully connected layers.
+            l5_weights: [(); 800].map(|()| Tensor1::new([(); 1600].map(|()| iter.next().unwrap()))),
+            l5_biases: Tensor1::new([(); 800].map(|()| iter.next().unwrap())),
+            l6_weights: [(); 626].map(|()| Tensor1::new([(); 800].map(|()| iter.next().unwrap()))),
+            l6_biases: Tensor1::new([(); 626].map(|()| iter.next().unwrap())),
+        }
+    }
+
+    pub fn save(&self, path: &str) {
+        let data = bincode::serialize(&self.get_save_data()).unwrap();
+        fs::write(path, data).expect("couldn't save network to file");
+    }
+
+    pub fn load(path: &str) -> Network {
+        let data = fs::read(path).expect("couldn't read file");
+        Network::from_save_data(bincode::deserialize(&data).unwrap())
+    }
+}
+
+use std::thread;
+fn with_larger_stack<'a, T, F>(f: F)
+where
+    T: 'a + Send,
+    F: FnOnce() -> T,
+    F: 'a + Send,
+{
+    unsafe {
+        thread::Builder::new()
+            .stack_size(1024 * 1024 * 1024 * 16)
+            .spawn_unchecked(f)
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn save_and_load() {
+        with_larger_stack(|| {
+            let orig = Network::init();
+            orig.save("test.data");
+            let network = Network::load("test.data");
+            fs::remove_file("test.data").unwrap();
+            assert_eq!(orig, network);
+        })  
+    }
+}
+
 #[cfg(test)]
 mod benches {
     use super::*;
-    use std::thread;
     use test::Bencher;
-
-    fn with_larger_stack<'a, T, F>(f: F)
-    where
-        T: 'a + Send,
-        F: FnOnce() -> T,
-        F: 'a + Send,
-    {
-        unsafe {
-            thread::Builder::new()
-                .stack_size(1024 * 1024 * 1024 * 16)
-                .spawn_unchecked(f)
-                .unwrap()
-                .join()
-                .unwrap();
-        }
-    }
 
     #[bench]
     fn init(ben: &mut Bencher) {

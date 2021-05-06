@@ -21,14 +21,16 @@ use std::thread;
 
 fn run() {
     let mut network = Network::init();
+    let mut i: u32 = 0;
     loop {
+        network.save(&format!("iters/alphazero_{:0>8}.data", i));
         train_network(&mut network);
         // TODO save network to file.
+        i += 1;
     }
 }
 
 // TODO
-// - Saving to file
 // - Back prop
 // - Logging
 // - Testing
@@ -37,7 +39,7 @@ fn run() {
 // - Litama support
 // - Optimizing (multithreading)
 // - Optimizing (gpu)
-// - Playing around with hyperparameters
+// - Playing around with hyper-parameters
 // - README
 
 fn main() {
