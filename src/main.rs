@@ -18,14 +18,30 @@ mod rand_game;
 use alpha_zero::train_network;
 use network::Network;
 use std::thread;
+use std::env;
+
 
 fn run() {
-    let mut network = Network::init();
-    let mut i: u32 = 0;
+    // Look at the second argument to see if we should load.
+    let mut args = env::args();
+    let _ = args.next(); // First arg will just be the name of the binary.
+    let second_arg = args.next()
+        .map(|x| x.parse::<u32>());
+
+    let mut i = 0;
+    let mut network = match second_arg {
+        Some(Ok(load)) if load > 0 => {
+            i = load + 1;
+            Network::load(&format!("iters/alphazero_{:>0}.data", load))
+        },
+        _ => Network::init()
+    };
+
+    // Main training loop.
+    // We save after each improvement.
     loop {
-        network.save(&format!("iters/alphazero_{:0>8}.data", i));
         train_network(&mut network);
-        // TODO save network to file.
+        network.save(&format!("iters/alphazero_{:0>8}.data", i));
         i += 1;
     }
 }
@@ -35,7 +51,6 @@ fn run() {
 // - Logging
 // - Testing
 // - Optimizing (single thread, no gpu)
-// - Loading from file
 // - Litama support
 // - Optimizing (multithreading)
 // - Optimizing (gpu)
