@@ -164,6 +164,7 @@ impl Network {
 }
 
 use std::thread;
+#[allow(dead_code)]
 fn with_larger_stack<'a, T, F>(f: F)
 where
     T: 'a + Send,
