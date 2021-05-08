@@ -17,24 +17,21 @@ mod rand_game;
 
 use alpha_zero::train_network;
 use network::Network;
-use std::thread;
-use std::env;
-
+use std::{env, thread};
 
 fn run() {
     // Look at the second argument to see if we should load.
     let mut args = env::args();
     let _ = args.next(); // First arg will just be the name of the binary.
-    let second_arg = args.next()
-        .map(|x| x.parse::<u32>());
+    let second_arg = args.next().map(|x| x.parse::<u32>());
 
     let mut i = 0;
     let mut network = match second_arg {
         Some(Ok(load)) if load > 0 => {
             i = load + 1;
             Network::load(&format!("iters/alphazero_{:>0}.data", load))
-        },
-        _ => Network::init()
+        }
+        _ => Network::init(),
     };
 
     // Main training loop.

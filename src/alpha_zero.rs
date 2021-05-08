@@ -1,5 +1,4 @@
-use crate::network::Network;
-use crate::{convert::game_to_input, mcts::Node, rand_game::random_game};
+use crate::{convert::game_to_input, mcts::Node, network::Network, rand_game::random_game};
 use onitama_move_gen::gen::Game;
 use rand::random;
 use tensor::*;
