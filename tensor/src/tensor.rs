@@ -1,4 +1,5 @@
 use super::*;
+use std::array::IntoIter;
 
 pub type Vector<T, const L: usize> = Tensor1<T, L>;
 pub type Matrix<T, const C: usize, const R: usize> = Tensor2<T, C, R>;
@@ -10,6 +11,10 @@ where
     fn new(data: [T; X]) -> Self;
     fn get_data(self) -> [T; X];
     fn get_data_mut(&mut self) -> &mut [T; X];
+    fn nth(&self, u: usize) -> T;
+    fn iter(self) -> IntoIter<T, X> {
+        IntoIter::new(self.get_data())
+    }
     fn reshape<G: Tensor<T, X>>(self) -> G {
         G::new(self.get_data())
     }
@@ -35,6 +40,10 @@ where
     fn get_data_mut(&mut self) -> &mut [T; L] {
         &mut self.0
     }
+
+    fn nth(&self, u: usize) -> T {
+        self.0[u]
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -58,6 +67,10 @@ where
 
     fn get_data_mut(&mut self) -> &mut [T; C * R] {
         &mut self.0
+    }
+
+    fn nth(&self, u: usize) -> T {
+        self.0[u]
     }
 }
 
@@ -85,6 +98,10 @@ where
 
     fn get_data_mut(&mut self) -> &mut [T; D1 * D2 * D3] {
         &mut self.0
+    }
+
+    fn nth(&self, u: usize) -> T {
+        self.0[u]
     }
 }
 
