@@ -11,6 +11,11 @@ pub fn relu(x: f64) -> f64 {
     f64::max(0., x)
 }
 
+/// Derivative of relu
+pub fn d_relu(x: f64) -> f64 {
+    if x >= 0. {1.} else {0.}
+}
+
 /// Numerically stable sigmoid function.
 pub fn sig(x: f64) -> f64 {
     if x >= 0. {
