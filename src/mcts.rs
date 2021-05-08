@@ -1,6 +1,4 @@
-use crate::convert::game_to_input;
-use crate::network::Network;
-use crate::rand_game::random_game;
+use crate::{convert::game_to_input, network::Network, rand_game::random_game};
 use onitama_move_gen::gen::Game;
 use rand::{
     distributions::{Distribution, WeightedIndex},
@@ -40,7 +38,10 @@ impl Node {
     pub fn improved_policy(&self) -> [f64; 625] {
         let mut policy = [0.; 625];
         for (&move_index, child) in self.children.as_ref().unwrap() {
-            policy[move_index] = child.expected_reward;
+            // policy[move_index] = child.expected_reward;  // TODO compare
+
+            // This ensures that the resulting vector's elements add up to 1.
+            policy[move_index] = child.visited_count as f64 / self.visited_count as f64;
         }
         policy
     }
@@ -84,7 +85,8 @@ impl Node {
         // This is the first time we are visiting this node,
         // initialize all child states.
         if self.children.is_none() {
-            // Use the neural network to get initial policy for children and eval for this board.
+            // Use the neural network to get initial policy for children
+            // and eval for this board.
             let (probability_vec, eval) = network.feed_forward(game_to_input(&self.game));
             let policy = probability_vec.get_data();
 
