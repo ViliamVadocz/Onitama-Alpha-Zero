@@ -16,11 +16,11 @@ mod tensor;
 #[cfg(feature = "rand")]
 mod random;
 
-pub use crate::{
-    elementwise::ElementWiseTensor,
-    ml::{relu, d_relu, sig},
-    tensor::{Matrix, Tensor, Tensor1, Tensor2, Tensor3, Vector},
-};
-
 #[cfg(feature = "rand")]
 pub use {crate::random::RandomTensor, rand::distributions as rand_distr};
+
+pub use crate::{
+    elementwise::ElementWiseTensor,
+    ml::{d_relu, relu, sig},
+    tensor::{Matrix, Tensor, Tensor1, Tensor2, Tensor3, Vector},
+};

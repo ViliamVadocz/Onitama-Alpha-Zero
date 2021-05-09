@@ -1,11 +1,13 @@
-use crate::{convert::game_to_input, network::Network, rand_game::random_game};
+use std::collections::HashMap;
+
 use onitama_move_gen::gen::Game;
 use rand::{
     distributions::{Distribution, WeightedIndex},
     thread_rng,
 };
-use std::collections::HashMap;
 use tensor::*;
+
+use crate::{convert::game_to_input, network::Network, rand_game::random_game};
 
 const EXPLORATION: f64 = 0.5;
 

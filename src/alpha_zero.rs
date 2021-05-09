@@ -1,7 +1,8 @@
-use crate::{convert::game_to_input, mcts::Node, network::Network, rand_game::random_game};
 use onitama_move_gen::gen::Game;
 use rand::random;
 use tensor::*;
+
+use crate::{convert::game_to_input, mcts::Node, network::Network, rand_game::random_game};
 
 // Self-play
 const GAMES_PER_BATCH: u32 = 500;

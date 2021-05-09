@@ -1,5 +1,6 @@
-use super::*;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+
+use super::*;
 
 pub trait ElementWiseTensor<T, const X: usize>: Tensor<T, X>
 where
@@ -11,9 +12,7 @@ where
     where
         T: MulAssign,
     {
-        self.get_data_mut()
-            .iter_mut()
-            .for_each(|elem| *elem *= scalar);
+        self.get_data_mut().iter_mut().for_each(|elem| *elem *= scalar);
         self
     }
 
@@ -22,9 +21,7 @@ where
     where
         F: Fn(T) -> T,
     {
-        self.get_data_mut()
-            .iter_mut()
-            .for_each(|elem| *elem = f(*elem));
+        self.get_data_mut().iter_mut().for_each(|elem| *elem = f(*elem));
         self
     }
 }
@@ -225,8 +222,9 @@ mod tests {
 
 #[cfg(test)]
 mod benches {
-    use super::*;
     use test::{black_box, Bencher};
+
+    use super::*;
 
     #[bench]
     fn elementwise_op(ben: &mut Bencher) {

@@ -1,15 +1,13 @@
-use super::*;
 use std::ops::{AddAssign, MulAssign};
+
+use super::*;
 
 impl<T, const L: usize> Tensor1<T, L>
 where
     T: Default + Copy + Debug,
 {
     /// Naive convolution.
-    pub fn convolve<const KERN_L: usize>(
-        &self,
-        kernel: &Tensor1<T, KERN_L>,
-    ) -> Tensor1<T, { L + 1 - KERN_L }>
+    pub fn convolve<const KERN_L: usize>(&self, kernel: &Tensor1<T, KERN_L>) -> Tensor1<T, { L + 1 - KERN_L }>
     where
         T: AddAssign + MulAssign,
     {
@@ -21,10 +19,7 @@ where
     }
 
     /// Naive convolution with default padding to preserve shape.
-    pub fn convolve_with_pad<const KERN_L: usize>(
-        &self,
-        kernel: &Tensor1<T, KERN_L>,
-    ) -> Tensor1<T, L>
+    pub fn convolve_with_pad<const KERN_L: usize>(&self, kernel: &Tensor1<T, KERN_L>) -> Tensor1<T, L>
     where
         T: AddAssign + MulAssign,
     {
@@ -230,8 +225,9 @@ mod tests {
 
 #[cfg(test)]
 mod benches {
-    use super::*;
     use test::Bencher;
+
+    use super::*;
 
     #[bench]
     fn convolve(ben: &mut Bencher) {

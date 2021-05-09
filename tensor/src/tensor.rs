@@ -1,5 +1,6 @@
-use super::*;
 use std::array::IntoIter;
+
+use super::*;
 
 pub type Vector<T, const L: usize> = Tensor1<T, L>;
 pub type Matrix<T, const C: usize, const R: usize> = Tensor2<T, C, R>;
@@ -75,9 +76,7 @@ where
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Tensor3<T, const D1: usize, const D2: usize, const D3: usize>(
-    pub(crate) [T; D1 * D2 * D3],
-)
+pub struct Tensor3<T, const D1: usize, const D2: usize, const D3: usize>(pub(crate) [T; D1 * D2 * D3])
 where
     T: Default + Copy + Debug,
     [(); D1 * D2 * D3]: ;

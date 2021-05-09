@@ -1,5 +1,6 @@
-use super::*;
 use rand::{distributions::Distribution, thread_rng};
+
+use super::*;
 
 pub trait RandomTensor<T, const X: usize>: Tensor<T, X>
 where
@@ -28,8 +29,9 @@ where
 
 #[cfg(test)]
 mod benches {
-    use super::*;
     use test::Bencher;
+
+    use super::*;
 
     #[bench]
     fn random(ben: &mut Bencher) {

@@ -15,9 +15,10 @@ mod mcts;
 mod network;
 mod rand_game;
 
+use std::{env, thread};
+
 use alpha_zero::train_network;
 use network::Network;
-use std::{env, thread};
 
 fn run() {
     // Look at the second argument to see if we should load.

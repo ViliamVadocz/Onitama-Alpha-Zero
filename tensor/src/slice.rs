@@ -218,8 +218,9 @@ mod tests {
 
 #[cfg(test)]
 mod benches {
-    use super::*;
     use test::Bencher;
+
+    use super::*;
 
     #[bench]
     fn slice(ben: &mut Bencher) {

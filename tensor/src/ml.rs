@@ -1,10 +1,12 @@
-use super::*;
+use std::{
+    array::IntoIter,
+    cmp::PartialOrd,
+    fmt::Debug,
+    iter::Sum,
+    ops::{Add, AddAssign, Mul, MulAssign},
+};
 
-use std::array::IntoIter;
-use std::cmp::PartialOrd;
-use std::fmt::Debug;
-use std::iter::Sum;
-use std::ops::{Add, AddAssign, Mul, MulAssign};
+use super::*;
 
 /// Rectilinear unit.
 pub fn relu(x: f64) -> f64 {
@@ -13,7 +15,11 @@ pub fn relu(x: f64) -> f64 {
 
 /// Derivative of relu
 pub fn d_relu(x: f64) -> f64 {
-    if x >= 0. {1.} else {0.}
+    if x >= 0. {
+        1.
+    } else {
+        0.
+    }
 }
 
 /// Numerically stable sigmoid function.
