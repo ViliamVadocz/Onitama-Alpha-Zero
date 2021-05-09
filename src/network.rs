@@ -1,5 +1,5 @@
-use std::array::IntoIter;
 use std::fs;
+
 use tensor::*;
 
 const LEARNING_RATE: f64 = 0.001;
@@ -99,30 +99,30 @@ impl Network {
 
         // Convolutional layers.
         for tensor in self.l1_kernels.iter() {
-            data.extend(IntoIter::new(tensor.get_data()));
+            data.extend(tensor.iter());
         }
-        data.extend(IntoIter::new(self.l1_biases.get_data()));
+        data.extend(self.l1_biases.iter());
         for tensor in self.l2_kernels.iter() {
-            data.extend(IntoIter::new(tensor.get_data()));
+            data.extend(tensor.iter());
         }
-        data.extend(IntoIter::new(self.l2_biases.get_data()));
+        data.extend(self.l2_biases.iter());
         for tensor in self.l3_kernels.iter() {
-            data.extend(IntoIter::new(tensor.get_data()));
+            data.extend(tensor.iter());
         }
-        data.extend(IntoIter::new(self.l3_biases.get_data()));
+        data.extend(self.l3_biases.iter());
         for tensor in self.l4_kernels.iter() {
-            data.extend(IntoIter::new(tensor.get_data()));
+            data.extend(tensor.iter());
         }
-        data.extend(IntoIter::new(self.l4_biases.get_data()));
+        data.extend(self.l4_biases.iter());
         // Fully connected layers.
         for tensor in self.l5_weights.iter() {
-            data.extend(IntoIter::new(tensor.get_data()));
+            data.extend(tensor.iter());
         }
-        data.extend(IntoIter::new(self.l5_biases.get_data()));
+        data.extend(self.l5_biases.iter());
         for tensor in self.l6_weights.iter() {
-            data.extend(IntoIter::new(tensor.get_data()));
+            data.extend(tensor.iter());
         }
-        data.extend(IntoIter::new(self.l6_biases.get_data()));
+        data.extend(self.l6_biases.iter());
 
         data
     }
@@ -193,14 +193,15 @@ mod tests {
             let network = Network::load("test.data");
             fs::remove_file("test.data").unwrap();
             assert_eq!(orig, network);
-        })  
+        })
     }
 }
 
 #[cfg(test)]
 mod benches {
-    use super::*;
     use test::Bencher;
+
+    use super::*;
 
     #[bench]
     fn init(ben: &mut Bencher) {
