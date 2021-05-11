@@ -12,9 +12,14 @@ where
     fn new(data: [T; X]) -> Self;
     fn get_data(self) -> [T; X];
     fn get_data_mut(&mut self) -> &mut [T; X];
-    fn nth(&self, u: usize) -> T;
+    fn nth(&self, n: usize) -> T;
     fn iter(self) -> IntoIter<T, X> {
         IntoIter::new(self.get_data())
+    }
+    fn rev(self) -> Self {
+        let mut data = self.get_data();
+        data.reverse();
+        Self::new(data)
     }
     fn reshape<G: Tensor<T, X>>(self) -> G {
         G::new(self.get_data())
@@ -42,8 +47,8 @@ where
         &mut self.0
     }
 
-    fn nth(&self, u: usize) -> T {
-        self.0[u]
+    fn nth(&self, n: usize) -> T {
+        self.0[n]
     }
 }
 
@@ -70,8 +75,8 @@ where
         &mut self.0
     }
 
-    fn nth(&self, u: usize) -> T {
-        self.0[u]
+    fn nth(&self, n: usize) -> T {
+        self.0[n]
     }
 }
 
@@ -99,8 +104,8 @@ where
         &mut self.0
     }
 
-    fn nth(&self, u: usize) -> T {
-        self.0[u]
+    fn nth(&self, n: usize) -> T {
+        self.0[n]
     }
 }
 
@@ -138,5 +143,27 @@ mod tests {
             .reshape::<Tensor2<_, 4, 3>>()
             .reshape();
         assert_eq!(a, b);
+    }
+
+    #[test]
+    fn nth() {
+        let a = Tensor1::new([0, 1, 2, 3, 4]);
+        assert_eq!(a.nth(1), 1);
+        let a = Tensor2::<_, 2, 3>::new([0, 1, 2, 3, 4, 5]);
+        assert_eq!(a.nth(2), 2);
+        let a = Tensor3::<_, 2, 2, 1>::new([0, 1, 2, 3]);
+        assert_eq!(a.nth(3), 3);
+    }
+
+    fn rev() {
+        assert_eq!(Tensor1::new([1, 2, 3, 4]).rev(), Tensor1::new([4, 3, 2, 1]));
+        assert_eq!(
+            Tensor2::<_, 2, 2>::new([1, 2, 3, 4]).rev(),
+            Tensor2::new([4, 3, 2, 1])
+        );
+        assert_eq!(
+            Tensor3::<_, 1, 2, 2>::new([1, 2, 3, 4]).rev(),
+            Tensor3::new([4, 3, 2, 1])
+        );
     }
 }
