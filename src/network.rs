@@ -109,15 +109,16 @@ impl Network {
         let (o, b) = l6_x.split_last();
         let p = o.softmax();
         let v = b.tanh();
+        // The cost function.
         let L = (z - v).powi(2) - (pi * &p.map(f64::ln)).sum();
 
+        // Begin calculating partial derivatives.
         let dL_dv = 2. * (v - z);
         let dL_db = dL_dv * (1. / b.cosh().powi(2)); // tanh'(x) = sech^2(x)
-
         let dL_do = p - &pi; // Use log trick with derivative of softmax.
 
         // Combine dl_do and dl_db.
-        let dL_dl6_x = {
+        let dL_dx = {
             let mut data = [0.; 626];
             for (elem, val) in data.iter_mut().zip(dL_do.iter()) {
                 *elem = val;
@@ -126,140 +127,96 @@ impl Network {
             Tensor1::new(data)
         };
 
-        // TODO Put this into functions!!!
-
-        // Back-propagate layer 6.
-        let dL_dl6_w: [Tensor1<f64, 800>; 626] = {
-            let mut iter = dL_dl6_x.iter();
-            [(); 626].map(|()| l5_a.scale(iter.next().unwrap() * LEARNING_RATE))
-        };
-        let dL_dl5_a = {
-            let mut data = [0.; 800];
-            let mut iter = self.l6_weights.iter();
-            for (k, elem) in data.iter_mut().enumerate() {
-                *elem = (dL_dl6_x * &Tensor1::new([(); 626].map(|()| iter.next().unwrap().nth(k)))).sum()
-            }
-            Tensor1::new(data)
-        };
-        self.l6_weights
-            .iter_mut()
-            .zip(dL_dl6_w.iter())
-            .for_each(|(weights, adjustment)| *weights -= adjustment);
-        self.l6_biases -= &dL_dl6_x.scale(LEARNING_RATE);
-
-        // Back-propagate layer 5.
-        let dL_dl5_x = dL_dl5_a.map(d_relu);
-        let dL_dl5_w: [Tensor1<f64, 1600>; 800] = {
-            let mut iter = dL_dl5_x.iter();
-            [(); 800].map(|()| l4_a.scale(iter.next().unwrap() * LEARNING_RATE))
-        };
-        let dL_dl4_a = {
-            let mut data = [0.; 1600];
-            let mut iter = self.l5_weights.iter();
-            for (k, elem) in data.iter_mut().enumerate() {
-                *elem = (dL_dl5_x * &Tensor1::new([(); 800].map(|()| iter.next().unwrap().nth(k)))).sum()
-            }
-            Tensor1::new(data)
-        };
-        self.l5_weights
-            .iter_mut()
-            .zip(dL_dl5_w.iter())
-            .for_each(|(weights, adjustment)| *weights -= adjustment);
-        self.l5_biases -= &dL_dl5_x.scale(LEARNING_RATE);
-
-        // Back-propagate layer 4.
-        let dL_dl4_x = dL_dl4_a.map(d_relu).reshape::<Tensor3<f64, 5, 5, 64>>();
-        let dL_dl4_k = {
-            let mut iter = 0..64;
-            [(); 64].map(|()| {
-                let i = iter.next().unwrap();
-                l3_a.convolve_with_pad_to(&dL_dl4_x.slice::<5, 5, 1>(0, 0, i))
-            })
-        };
-        let dL_dl3_a = {
-            let mut res = Tensor3::<_, 5, 5, 64>::new([0.; 1600]);
-            for (i, &kernel) in self.l4_kernels.iter().enumerate() {
-                res += &kernel
-                    .rev()
-                    .convolve_with_pad_to(&dL_dl4_x.slice::<5, 5, 1>(0, 0, i))
-                    .rev();
-            }
-            res
-        };
-        self.l4_kernels
-            .iter_mut()
-            .zip(dL_dl4_k.iter())
-            .for_each(|(kernel, adjustment)| *kernel -= adjustment);
-        self.l4_biases -= &dL_dl4_x.scale(LEARNING_RATE);
-
-        // Back-propagate layer 3.
-        let dL_dl3_x = dL_dl3_a.map(d_relu);
-        let dL_dl3_k = {
-            let mut iter = 0..64;
-            [(); 64].map(|()| {
-                let i = iter.next().unwrap();
-                l2_a.convolve_with_pad_to(&dL_dl3_x.slice::<5, 5, 1>(0, 0, i))
-            })
-        };
-        let dL_dl2_a = {
-            let mut res = Tensor3::<_, 5, 5, 64>::new([0.; 1600]);
-            for (i, &kernel) in self.l3_kernels.iter().enumerate() {
-                res += &kernel
-                    .rev()
-                    .convolve_with_pad_to(&dL_dl3_x.slice::<5, 5, 1>(0, 0, i))
-                    .rev();
-            }
-            res
-        };
-        self.l3_kernels
-            .iter_mut()
-            .zip(dL_dl3_k.iter())
-            .for_each(|(kernel, adjustment)| *kernel -= adjustment);
-        self.l3_biases -= &dL_dl3_x.scale(LEARNING_RATE);
-
-        // Back-propagate layer 2.
-        let dL_dl2_x = dL_dl2_a.map(d_relu);
-        let dL_dl2_k = {
-            let mut iter = 0..64;
-            [(); 64].map(|()| {
-                let i = iter.next().unwrap();
-                l1_a.convolve_with_pad_to(&dL_dl2_x.slice::<5, 5, 1>(0, 0, i))
-            })
-        };
-        let dL_dl1_a = {
-            let mut res = Tensor3::<_, 5, 5, 64>::new([0.; 1600]);
-            for (i, &kernel) in self.l2_kernels.iter().enumerate() {
-                res += &kernel
-                    .rev()
-                    .convolve_with_pad_to(&dL_dl2_x.slice::<5, 5, 1>(0, 0, i))
-                    .rev();
-            }
-            res
-        };
-        self.l2_kernels
-            .iter_mut()
-            .zip(dL_dl2_k.iter())
-            .for_each(|(kernel, adjustment)| *kernel -= adjustment);
-        self.l2_biases -= &dL_dl2_x.scale(LEARNING_RATE);
-
-        // Back-propagate layer 1.
-        let dL_dl1_x = dL_dl1_a.map(d_relu);
-        let dL_dl1_k = {
-            let mut iter = 0..64;
-            [(); 64].map(|()| {
-                let i = iter.next().unwrap();
-                l1_a.convolve_with_pad_to(&dL_dl1_x.slice::<5, 5, 1>(0, 0, i))
-            })
-        };
-        self.l1_kernels
-            .iter_mut()
-            .zip(dL_dl1_k.iter())
-            .for_each(|(kernel, adjustment)| *kernel -= adjustment);
-        self.l1_biases -= &dL_dl1_x.scale(LEARNING_RATE);
+        let dL_da = bp_fully_connected(&mut self.l6_weights, &mut self.l6_biases, l5_a, dL_dx);
+        let dL_da = bp_fully_connected(&mut self.l5_weights, &mut self.l5_biases, l4_a, dL_da.map(d_relu));
+        let dL_da = bp_convolution(
+            &mut self.l4_kernels,
+            &mut self.l4_biases,
+            l3_a,
+            dL_da.map(d_relu).reshape(),
+        );
+        let dL_da = bp_convolution(&mut self.l3_kernels, &mut self.l3_biases, l2_a, dL_da.map(d_relu));
+        let dL_da = bp_convolution(&mut self.l2_kernels, &mut self.l2_biases, l1_a, dL_da.map(d_relu));
+        let _ = bp_convolution(
+            &mut self.l1_kernels,
+            &mut self.l1_biases,
+            input,
+            dL_da.map(d_relu),
+        );
 
         // Return loss just to track if it is going down.
         L
     }
+}
+
+/// Do back-propagation for a fully connected layer.
+fn bp_fully_connected<const A: usize, const B: usize>(
+    weights: &mut [Tensor1<f64, A>; B],
+    biases: &mut Tensor1<f64, B>,
+    prev_activations: Tensor1<f64, A>,
+    next_layer_derivatives: Tensor1<f64, B>,
+) -> Tensor1<f64, A> {
+    let change_in_weights = {
+        let mut iter = next_layer_derivatives.iter();
+        [(); B].map(|()| prev_activations.scale(iter.next().unwrap() * LEARNING_RATE))
+    };
+    let prev_layer_derivatives = {
+        let mut data = [0.; A];
+        for (n, elem) in data.iter_mut().enumerate() {
+            let mut iter = weights.iter();
+            *elem =
+                (next_layer_derivatives * &Tensor1::new([(); B].map(|()| iter.next().unwrap().nth(n)))).sum();
+        }
+        Tensor1::new(data)
+    };
+
+    weights
+        .iter_mut()
+        .zip(change_in_weights.iter())
+        .for_each(|(weights, adjustment)| *weights -= adjustment);
+    *biases -= &next_layer_derivatives.scale(LEARNING_RATE);
+
+    prev_layer_derivatives
+}
+
+/// Do back-propagation for a convolution layer.
+fn bp_convolution<const A: usize, const B: usize>(
+    kernels: &mut [Tensor3<f64, 3, 3, A>; B],
+    biases: &mut Tensor3<f64, 5, 5, B>,
+    prev_activations: Tensor3<f64, 5, 5, A>,
+    next_layer_derivatives: Tensor3<f64, 5, 5, B>,
+) -> Tensor3<f64, 5, 5, A>
+where
+    [(); 3 * 3 * A]: ,
+    [(); 5 * 5 * A]: ,
+    [(); 5 * 5 * B]: ,
+{
+    let change_in_kernels = {
+        let mut iter = 0..64;
+        [(); 64].map(|()| {
+            let i = iter.next().unwrap();
+            prev_activations
+                .convolve_with_pad_to(&next_layer_derivatives.slice::<5, 5, 1>(0, 0, i))
+                .scale(LEARNING_RATE)
+        })
+    };
+    let prev_layer_derivatives = {
+        let mut res = Tensor3::<_, 5, 5, A>::new([0.; 5 * 5 * A]);
+        for (i, &kernel) in kernels.iter().enumerate() {
+            res += &kernel
+                .rev()
+                .convolve_with_pad_to(&next_layer_derivatives.slice::<5, 5, 1>(0, 0, i))
+                .rev();
+        }
+        res
+    };
+    kernels
+        .iter_mut()
+        .zip(change_in_kernels.iter())
+        .for_each(|(kernel, adjustment)| *kernel -= adjustment);
+    *biases -= &next_layer_derivatives.scale(LEARNING_RATE);
+
+    prev_layer_derivatives
 }
 
 impl Network {
@@ -382,5 +339,16 @@ mod benches {
             let input = Tensor3::rand(rand_distr::Uniform::new(0., 1.));
             ben.iter(|| network.feed_forward(input));
         })
+    }
+
+    #[bench]
+    fn back_prop(ben: &mut Bencher) {
+        with_larger_stack(move || {
+            let mut network = Network::init();
+            let input = Tensor3::rand(rand_distr::Uniform::new(0., 1.));
+            let pi = Tensor1::rand(rand_distr::Uniform::new(0., 1.));
+            let z = 0.5;
+            ben.iter(|| network.back_prop(input, pi, z));
+        })  
     }
 }
