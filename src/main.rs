@@ -45,7 +45,6 @@ fn run() {
 }
 
 // TODO
-// - Back prop
 // - Logging
 // - Testing
 // - Optimizing (single thread, no gpu)

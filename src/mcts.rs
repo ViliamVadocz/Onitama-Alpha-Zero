@@ -133,8 +133,8 @@ impl Node {
         self.children = Some(children);
 
         // Take the mean of the expected reward and eval.
-        self.expected_reward = ((self.visited_count - 1) as f64 * self.expected_reward + eval)
-            / (self.visited_count as f64);
+        self.expected_reward =
+            ((self.visited_count - 1) as f64 * self.expected_reward + eval) / (self.visited_count as f64);
 
         -eval
     }
