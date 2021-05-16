@@ -1,4 +1,4 @@
-use std::array::IntoIter;
+use std::{array::IntoIter, iter::Sum};
 
 use super::*;
 
@@ -15,6 +15,12 @@ where
     fn nth(&self, n: usize) -> T;
     fn iter(self) -> IntoIter<T, X> {
         IntoIter::new(self.get_data())
+    }
+    fn sum(self) -> T
+    where
+        T: Sum<T>,
+    {
+        self.iter().sum()
     }
     fn rev(self) -> Self {
         let mut data = self.get_data();
@@ -155,6 +161,7 @@ mod tests {
         assert_eq!(a.nth(3), 3);
     }
 
+    #[test]
     fn rev() {
         assert_eq!(Tensor1::new([1, 2, 3, 4]).rev(), Tensor1::new([4, 3, 2, 1]));
         assert_eq!(
