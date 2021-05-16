@@ -1,4 +1,4 @@
-#![feature(const_generics, const_evaluatable_checked, array_map)]
+#![feature(const_generics, const_evaluatable_checked, array_map, thread_spawn_unchecked)]
 #![allow(incomplete_features)]
 #![feature(test)]
 extern crate test;
@@ -21,6 +21,6 @@ pub use {crate::random::RandomTensor, rand::distributions as rand_distr};
 
 pub use crate::{
     elementwise::ElementWiseTensor,
-    ml::{d_relu, relu, sig},
+    ml::{d_relu, relu, sig, with_larger_stack},
     tensor::{Matrix, Tensor, Tensor1, Tensor2, Tensor3, Vector},
 };

@@ -50,7 +50,10 @@ where
         [(); D1 * D2 * N]: ,
     {
         let conv_out = kernels.map(|kernel| self.convolve_with_pad(&kernel).get_data());
-        let data = unsafe { std::mem::transmute_copy(&conv_out) };
+        let mut data = [T::default(); D1 * D2 * N];
+        for (elem, var) in data.iter_mut().zip(IntoIter::new(conv_out).flatten()) {
+            *elem = var;
+        }
         Tensor3::new(data) + biases
     }
 }
@@ -59,13 +62,6 @@ impl<T, const L: usize> Tensor1<T, L>
 where
     T: Copy + Default + Debug,
 {
-    pub fn sum(self) -> T
-    where
-        T: Sum<T>,
-    {
-        IntoIter::new(self.get_data()).sum()
-    }
-
     /// Essentially matrix multiplication.
     pub fn fully_connected_pass<const N: usize>(
         self,
@@ -102,5 +98,51 @@ impl<const L: usize> Tensor1<f64, L> {
         let b = self.0.iter().cloned().fold(f64::NAN, f64::max);
         let exp = self.map(|x| f64::exp(x - b));
         exp.scale(1. / exp.sum())
+    }
+}
+
+use std::thread;
+pub fn with_larger_stack<'a, T, F>(f: F)
+where
+    T: 'a + Send,
+    F: FnOnce() -> T,
+    F: 'a + Send,
+{
+    unsafe {
+        thread::Builder::new()
+            .stack_size(1024 * 1024 * 1024 * 32)
+            .spawn_unchecked(f)
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+}
+
+#[cfg(test)]
+mod benches {
+    use test::Bencher;
+
+    use super::*;
+
+    #[bench]
+    fn conv_pass(ben: &mut Bencher) {
+        let distr = rand_distr::Uniform::<f64>::new(-1., 1.);
+        with_larger_stack(move || {
+            let a = Tensor3::<_, 5, 5, 64>::rand(distr);
+            let kernels = [(); 64].map(|()| Tensor3::<_, 3, 3, 64>::rand(distr));
+            let biases = Tensor3::rand(distr);
+            ben.iter(|| a.convolution_pass(&kernels, &biases));
+        })
+    }
+
+    #[bench]
+    fn full_matmul_pass(ben: &mut Bencher) {
+        let distr = rand_distr::Uniform::<f64>::new(-1., 1.);
+        with_larger_stack(move || {
+            let a = Tensor1::<_, 2000>::rand(distr);
+            let weights = [(); 1000].map(|()| Tensor1::rand(distr));
+            let biases = Tensor1::rand(distr);
+            ben.iter(|| a.fully_connected_pass(&weights, &biases));
+        });
     }
 }

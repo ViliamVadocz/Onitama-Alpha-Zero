@@ -285,24 +285,6 @@ impl Network {
     }
 }
 
-use std::thread;
-#[allow(dead_code)]
-fn with_larger_stack<'a, T, F>(f: F)
-where
-    T: 'a + Send,
-    F: FnOnce() -> T,
-    F: 'a + Send,
-{
-    unsafe {
-        thread::Builder::new()
-            .stack_size(1024 * 1024 * 1024 * 16)
-            .spawn_unchecked(f)
-            .unwrap()
-            .join()
-            .unwrap();
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -349,6 +331,6 @@ mod benches {
             let pi = Tensor1::rand(rand_distr::Uniform::new(0., 1.));
             let z = 0.5;
             ben.iter(|| network.back_prop(input, pi, z));
-        })  
+        })
     }
 }
