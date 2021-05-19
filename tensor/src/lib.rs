@@ -5,6 +5,7 @@ extern crate test;
 
 use std::fmt::{Debug, Display};
 
+mod array_init;
 mod convolution;
 mod default;
 mod display;
