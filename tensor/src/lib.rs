@@ -7,6 +7,7 @@ use std::fmt::{Debug, Display};
 
 mod array_init;
 mod convolution;
+mod convolution_fft;
 mod default;
 mod display;
 mod elementwise;
