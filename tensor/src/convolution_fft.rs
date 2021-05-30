@@ -1,4 +1,4 @@
-use std::{array::IntoIter, convert::TryInto};
+use std::array::IntoIter;
 
 use rustfft::{num_complex::Complex64, FftDirection, FftPlanner};
 
@@ -93,17 +93,23 @@ fn apply_fft_3<const X1: usize, const X2: usize, const X3: usize>(
     fft_planner: &mut FftPlanner<f64>,
     direction: FftDirection,
 ) {
+    let row_fft = fft_planner.plan_fft(X1, direction);
+    let col_fft = fft_planner.plan_fft(X2, direction);
     let ax3_fft = fft_planner.plan_fft(X3, direction);
 
     for depth in 0..X3 {
-        apply_fft_2::<X1, X2>(
-            &mut data[(depth * (X1 * X2))..((depth + 1) * (X1 * X2))]
-                .try_into()
-                .unwrap(),
-            fft_planner,
-            direction,
-        );
+        for row in 0..X2 {
+            row_fft.process(&mut data[(depth * (X1 * X2) + row * X1)..(depth * (X1 * X2) + (row + 1) * X1)]);
+        }
+        for col in 0..X1 {
+            let mut column: [_; X2] = array_init(|i| data[depth * (X1 * X2) + i * X1 + col]);
+            col_fft.process(&mut column);
+            for (i, val) in IntoIter::new(column).enumerate() {
+                data[depth * (X1 * X2) + i * X1 + col] = val;
+            }
+        }
     }
+
     for col in 0..X1 {
         for row in 0..X2 {
             let mut ax3: [_; X3] = array_init(|i| data[i * (X1 * X2) + row * X1 + col]);
@@ -251,7 +257,7 @@ mod tests {
         let mut fft_planner = FftPlanner::new();
         let naive = a.convolve_with_pad_to::<5, 104>(&kernel);
         let fft = a.convolve_fft(&kernel, &mut fft_planner).finish(&mut fft_planner);
-        assert!((naive - &fft).sum() < 1e-9);
+        assert!((naive - &fft).map(f64::abs).sum() < 1e-9);
     }
 
     #[test]
@@ -262,7 +268,7 @@ mod tests {
         let mut fft_planner = FftPlanner::new();
         let naive = a.convolve_with_pad_to::<3, 3, 22, 22>(&kernel);
         let fft = a.convolve_fft(&kernel, &mut fft_planner).finish(&mut fft_planner);
-        assert!((naive - &fft).sum() < 1e-9);
+        assert!((naive - &fft).map(f64::abs).sum() < 1e-9);
     }
 
     #[test]
@@ -274,8 +280,7 @@ mod tests {
         let mut fft_planner = FftPlanner::new();
         let naive = a.convolve_with_pad_to::<3, 3, 3, 10, 10, 10>(&kernel);
         let fft = a.convolve_fft(&kernel, &mut fft_planner).finish(&mut fft_planner);
-        println!("{}", (naive - &fft).sum());
-        assert!((naive - &fft).sum() < 1e-9);
+        assert!((naive - &fft).map(f64::abs).sum() < 1e-9);
     }
 }
 
