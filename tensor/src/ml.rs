@@ -49,7 +49,7 @@ where
         [(); K_D1 * K_D2 * D3]: ,
         [(); D1 * D2 * N]: ,
     {
-        let conv_out = kernels.map(|kernel| self.convolve_with_pad(&kernel).get_data());
+        let conv_out = kernels.map(|kernel| self.convolve_with_pad(kernel).get_data());
         let mut data = [T::default(); D1 * D2 * N];
         for (elem, var) in data.iter_mut().zip(IntoIter::new(conv_out).flatten()) {
             *elem = var;

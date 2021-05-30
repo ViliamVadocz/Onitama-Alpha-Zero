@@ -24,18 +24,18 @@ pub const fn fft_l(L: usize, KERN_L: usize) -> usize {
     L + KERN_L - 1
 }
 
-fn to_complex_1<const L: usize, const X: usize>(tensor: &Tensor1<f64, L>) -> [Complex64; X] {
-    let mut iter = tensor.iter().map(|x| Complex64::new(x, 0.));
+fn to_complex_1<const L: usize, const X: usize>(tensor: Tensor1<f64, L>) -> [Complex64; X] {
+    let mut iter = tensor.into_iter().map(|x| Complex64::new(x, 0.));
     [(); X].map(|()| iter.next().unwrap_or_default())
 }
 
 fn to_complex_2<const C: usize, const R: usize, const X1: usize, const X2: usize>(
-    tensor: &Tensor2<f64, C, R>,
+    tensor: Tensor2<f64, C, R>,
 ) -> [Complex64; X1 * X2]
 where
     [(); C * R]: ,
 {
-    let mut iter = tensor.iter().map(|x| Complex64::new(x, 0.));
+    let mut iter = tensor.into_iter().map(|x| Complex64::new(x, 0.));
     array_init(|i| {
         if i % X1 < C {
             iter.next().unwrap_or_default()
@@ -53,12 +53,12 @@ fn to_complex_3<
     const X2: usize,
     const X3: usize,
 >(
-    tensor: &Tensor3<f64, D1, D2, D3>,
+    tensor: Tensor3<f64, D1, D2, D3>,
 ) -> [Complex64; X1 * X2 * X3]
 where
     [(); D1 * D2 * D3]: ,
 {
-    let mut iter = tensor.iter().map(|x| Complex64::new(x, 0.));
+    let mut iter = tensor.into_iter().map(|x| Complex64::new(x, 0.));
     array_init(|i| {
         if i % X1 < D1 && (i / X1) % X2 < D2 {
             iter.next().unwrap_or_default()
@@ -123,12 +123,12 @@ fn apply_fft_3<const X1: usize, const X2: usize, const X3: usize>(
 
 impl<const L: usize> Tensor1<f64, L> {
     pub fn convolve_fft<const KERN_L: usize>(
-        &self,
-        kernel: &Tensor1<f64, KERN_L>,
+        self,
+        kernel: Tensor1<f64, KERN_L>,
         fft_planner: &mut FftPlanner<f64>,
     ) -> conv_inter!(fft_l(L, KERN_L), Tensor1) {
         let mut tensor_data = to_complex_1(self);
-        let mut kernel_data = to_complex_1(&kernel.rev());
+        let mut kernel_data = to_complex_1(kernel.rev());
         let fft = fft_planner.plan_fft_forward(fft_l(L, KERN_L));
         fft.process(&mut tensor_data);
         fft.process(&mut kernel_data);
@@ -142,8 +142,8 @@ where
     [(); C * R]: ,
 {
     pub fn convolve_fft<const KERN_C: usize, const KERN_R: usize>(
-        &self,
-        kernel: &Tensor2<f64, KERN_C, KERN_R>,
+        self,
+        kernel: Tensor2<f64, KERN_C, KERN_R>,
         fft_planner: &mut FftPlanner<f64>,
     ) -> conv_inter!(fft_l(C, KERN_C) * fft_l(R, KERN_R), Tensor2, fft_l(C, KERN_C) fft_l(R, KERN_R))
     where
@@ -151,7 +151,7 @@ where
     {
         let mut tensor_data = to_complex_2::<C, R, { fft_l(C, KERN_C) }, { fft_l(R, KERN_R) }>(self);
         let mut kernel_data =
-            to_complex_2::<KERN_C, KERN_R, { fft_l(C, KERN_C) }, { fft_l(R, KERN_R) }>(&kernel.rev());
+            to_complex_2::<KERN_C, KERN_R, { fft_l(C, KERN_C) }, { fft_l(R, KERN_R) }>(kernel.rev());
         apply_fft_2::<{ fft_l(C, KERN_C) }, { fft_l(R, KERN_R) }>(
             &mut tensor_data,
             fft_planner,
@@ -172,8 +172,8 @@ where
     [(); D1 * D2 * D3]: ,
 {
     pub fn convolve_fft<const KERN_D1: usize, const KERN_D2: usize, const KERN_D3: usize>(
-        &self,
-        kernel: &Tensor3<f64, KERN_D1, KERN_D2, KERN_D3>,
+        self,
+        kernel: Tensor3<f64, KERN_D1, KERN_D2, KERN_D3>,
         fft_planner: &mut FftPlanner<f64>,
     ) -> conv_inter!(
            fft_l(D1, KERN_D1) * fft_l(D2, KERN_D2) * fft_l(D3, KERN_D3),
@@ -198,7 +198,7 @@ where
             { fft_l(D1, KERN_D1) },
             { fft_l(D2, KERN_D2) },
             { fft_l(D3, KERN_D3) },
-        >(&kernel.rev());
+        >(kernel.rev());
         apply_fft_3::<{ fft_l(D1, KERN_D1) }, { fft_l(D2, KERN_D2) }, { fft_l(D3, KERN_D3) }>(
             &mut tensor_data,
             fft_planner,
@@ -255,8 +255,8 @@ mod tests {
         let a = Tensor1::<_, 100>::rand(distr);
         let kernel = Tensor1::<_, 5>::rand(distr);
         let mut fft_planner = FftPlanner::new();
-        let naive = a.convolve_with_pad_to::<5, 104>(&kernel);
-        let fft = a.convolve_fft(&kernel, &mut fft_planner).finish(&mut fft_planner);
+        let naive = a.convolve_with_pad_to::<5, 104>(kernel);
+        let fft = a.convolve_fft(kernel, &mut fft_planner).finish(&mut fft_planner);
         assert!((naive - &fft).map(f64::abs).sum() < 1e-9);
     }
 
@@ -266,8 +266,8 @@ mod tests {
         let a = Tensor2::<_, 20, 20>::rand(distr);
         let kernel = Tensor2::<_, 3, 3>::rand(distr);
         let mut fft_planner = FftPlanner::new();
-        let naive = a.convolve_with_pad_to::<3, 3, 22, 22>(&kernel);
-        let fft = a.convolve_fft(&kernel, &mut fft_planner).finish(&mut fft_planner);
+        let naive = a.convolve_with_pad_to::<3, 3, 22, 22>(kernel);
+        let fft = a.convolve_fft(kernel, &mut fft_planner).finish(&mut fft_planner);
         assert!((naive - &fft).map(f64::abs).sum() < 1e-9);
     }
 
@@ -278,8 +278,8 @@ mod tests {
         let a = Tensor3::<_, 8, 8, 8>::rand(distr);
         let kernel = Tensor3::<_, 3, 3, 3>::rand(distr);
         let mut fft_planner = FftPlanner::new();
-        let naive = a.convolve_with_pad_to::<3, 3, 3, 10, 10, 10>(&kernel);
-        let fft = a.convolve_fft(&kernel, &mut fft_planner).finish(&mut fft_planner);
+        let naive = a.convolve_with_pad_to::<3, 3, 3, 10, 10, 10>(kernel);
+        let fft = a.convolve_fft(kernel, &mut fft_planner).finish(&mut fft_planner);
         assert!((naive - &fft).map(f64::abs).sum() < 1e-9);
     }
 }
@@ -295,7 +295,7 @@ mod benches {
         with_larger_stack(|| {
             let a = Tensor3::<f64, 5, 5, 64>::rand(rand_distr::Uniform::new(-1., 1.));
             let b = Tensor3::<f64, 3, 3, 64>::rand(rand_distr::Uniform::new(-1., 1.));
-            ben.iter(|| a.convolve_with_pad_to::<3, 3, 64, 7, 7, 127>(&b));
+            ben.iter(|| a.convolve_with_pad_to::<3, 3, 64, 7, 7, 127>(b));
         });
     }
 
@@ -305,8 +305,7 @@ mod benches {
             let a = Tensor3::<f64, 5, 5, 64>::rand(rand_distr::Uniform::new(-1., 1.));
             let b = Tensor3::<f64, 3, 3, 64>::rand(rand_distr::Uniform::new(-1., 1.));
             let mut fft_planner = FftPlanner::new();
-            a.convolve_fft(&b, &mut fft_planner).finish(&mut fft_planner);
-            ben.iter(|| a.convolve_fft(&b, &mut fft_planner).finish(&mut fft_planner));
+            ben.iter(|| a.convolve_fft(b, &mut fft_planner).finish(&mut fft_planner));
         });
     }
 }

@@ -1,4 +1,4 @@
-use std::{array::IntoIter, iter::Sum};
+use std::{array::IntoIter, iter::Sum, slice::Iter};
 
 use super::*;
 
@@ -11,16 +11,20 @@ where
 {
     fn new(data: [T; X]) -> Self;
     fn get_data(self) -> [T; X];
+    fn get_data_ref(&self) -> &[T; X];
     fn get_data_mut(&mut self) -> &mut [T; X];
     fn nth(&self, n: usize) -> T;
-    fn iter(self) -> IntoIter<T, X> {
+    fn iter(&self) -> Iter<'_, T> {
+        self.get_data_ref().iter()
+    }
+    fn into_iter(self) -> IntoIter<T, X> {
         IntoIter::new(self.get_data())
     }
     fn sum(self) -> T
     where
         T: Sum<T>,
     {
-        self.iter().sum()
+        self.into_iter().sum()
     }
     fn rev(self) -> Self {
         let mut data = self.get_data();
@@ -47,6 +51,10 @@ where
 
     fn get_data(self) -> [T; L] {
         self.0
+    }
+
+    fn get_data_ref(&self) -> &[T; L] {
+        &self.0
     }
 
     fn get_data_mut(&mut self) -> &mut [T; L] {
@@ -77,6 +85,10 @@ where
         self.0
     }
 
+    fn get_data_ref(&self) -> &[T; C * R] {
+        &self.0
+    }
+
     fn get_data_mut(&mut self) -> &mut [T; C * R] {
         &mut self.0
     }
@@ -104,6 +116,10 @@ where
 
     fn get_data(self) -> [T; D1 * D2 * D3] {
         self.0
+    }
+
+    fn get_data_ref(&self) -> &[T; D1 * D2 * D3] {
+        &self.0
     }
 
     fn get_data_mut(&mut self) -> &mut [T; D1 * D2 * D3] {
