@@ -131,6 +131,34 @@ where
     }
 }
 
+// Reshape cannot handle this.
+// The compiler cannot prove that * 1 doesn't change the size.
+impl<T, const D1: usize, const D2: usize> Tensor3<T, D1, D2, 1>
+where
+    T: Default + Copy + Debug,
+    [(); D1 * D2 * 1]: ,
+{
+    pub fn squeeze(self) -> Tensor2<T, D1, D2>
+    where
+        [(); D1 * D2]: ,
+    {
+        Tensor2(unsafe { std::mem::transmute_copy(&self.0) })
+    }
+}
+
+impl<T, const D1: usize, const D2: usize> Tensor2<T, D1, D2>
+where
+    T: Default + Copy + Debug,
+    [(); D1 * D2]: ,
+{
+    pub fn unsqueeze(self) -> Tensor3<T, D1, D2, 1>
+    where
+        [(); D1 * D2 * 1]: ,
+    {
+        Tensor3(unsafe { std::mem::transmute_copy(&self.0) })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

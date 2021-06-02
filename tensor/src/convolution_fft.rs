@@ -216,7 +216,7 @@ where
 
 impl<const L: usize> conv_inter!(L, Tensor1) {
     pub fn finish(self, fft_planner: &mut FftPlanner<f64>) -> Tensor1<f64, L> {
-        let mut data = self.tensor.get_data();
+        let mut data = self.tensor.0;
         let fft = fft_planner.plan_fft_inverse(L);
         fft.process(&mut data);
         Tensor1(data.map(|z| z.re / L as f64))
@@ -228,7 +228,7 @@ impl<const C: usize, const R: usize> conv_inter!(C * R, Tensor2, C R) {
     where
         [(); C * R]: ,
     {
-        let mut data = self.tensor.get_data();
+        let mut data = self.tensor.0;
         apply_fft_2::<C, R>(&mut data, fft_planner, FftDirection::Inverse);
         Tensor2(data.map(|z| z.re / (C * R) as f64))
     }
@@ -239,7 +239,7 @@ impl<const D1: usize, const D2: usize, const D3: usize> conv_inter!(D1 * D2 * D3
     where
         [(); D1 * D2 * D3]: ,
     {
-        let mut data = self.tensor.get_data();
+        let mut data = self.tensor.0;
         apply_fft_3::<D1, D2, D3>(&mut data, fft_planner, FftDirection::Inverse);
         Tensor3(data.map(|z| z.re / (D1 * D2 * D3) as f64))
     }
@@ -272,7 +272,6 @@ mod tests {
     }
 
     #[test]
-    /// Sometimes works, sometimes not???
     fn convolve_fft_tensor3() {
         let distr = rand_distr::Uniform::new(-10., 10.);
         let a = Tensor3::<_, 8, 8, 8>::rand(distr);
@@ -295,7 +294,7 @@ mod benches {
         with_larger_stack(|| {
             let a = Tensor3::<f64, 5, 5, 64>::rand(rand_distr::Uniform::new(-1., 1.));
             let b = Tensor3::<f64, 3, 3, 64>::rand(rand_distr::Uniform::new(-1., 1.));
-            ben.iter(|| a.convolve_with_pad_to::<3, 3, 64, 7, 7, 127>(b));
+            ben.iter(|| a.convolve_with_pad(b));
         });
     }
 
@@ -305,7 +304,33 @@ mod benches {
             let a = Tensor3::<f64, 5, 5, 64>::rand(rand_distr::Uniform::new(-1., 1.));
             let b = Tensor3::<f64, 3, 3, 64>::rand(rand_distr::Uniform::new(-1., 1.));
             let mut fft_planner = FftPlanner::new();
-            ben.iter(|| a.convolve_fft(b, &mut fft_planner).finish(&mut fft_planner));
+            ben.iter(|| {
+                a.convolve_fft(b, &mut fft_planner)
+                    .finish(&mut fft_planner)
+                    .slice::<5, 5, 1>(1, 1, 63)
+            });
+        });
+    }
+
+    #[bench]
+    fn different_approach(ben: &mut Bencher) {
+        with_larger_stack(|| {
+            let a = Tensor3::<f64, 5, 5, 64>::rand(rand_distr::Uniform::new(-1., 1.));
+            let b = Tensor3::<f64, 3, 3, 64>::rand(rand_distr::Uniform::new(-1., 1.));
+            let mut fft_planner = FftPlanner::new();
+            ben.iter(|| {
+                let mut res = Tensor3::<_, 5, 5, 1>::default();
+                for channel in 0..64 {
+                    let slice = a.slice::<5, 5, 1>(0, 0, channel).reshape::<Tensor2<_, 5, 5>>();
+                    let kernel_slice = b.slice::<3, 3, 1>(0, 0, channel).reshape::<Tensor2<_, 3, 3>>();
+                    res += &slice
+                        .convolve_fft(kernel_slice, &mut fft_planner)
+                        .finish(&mut fft_planner)
+                        .slice::<5, 5>(1, 1)
+                        .reshape();
+                }
+                res
+            });
         });
     }
 }

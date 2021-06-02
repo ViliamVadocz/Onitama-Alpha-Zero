@@ -3,10 +3,11 @@ use std::{
     cmp::PartialOrd,
     fmt::Debug,
     iter::Sum,
-    ops::{Add, AddAssign, Mul, MulAssign},
+    ops::{Add, Mul},
 };
 
 use super::*;
+use crate::convolution_fft::fft_l;
 
 /// Rectilinear unit.
 pub fn relu(x: f64) -> f64 {
@@ -33,24 +34,44 @@ pub fn sig(x: f64) -> f64 {
     }
 }
 
-impl<T, const D1: usize, const D2: usize, const D3: usize> Tensor3<T, D1, D2, D3>
+impl<const D1: usize, const D2: usize, const D3: usize> Tensor3<f64, D1, D2, D3>
 where
-    T: Copy + Default + Debug,
     [(); D1 * D2 * D3]: ,
 {
     pub fn convolution_pass<const N: usize, const K_D1: usize, const K_D2: usize>(
         self,
-        kernels: &[Tensor3<T, K_D1, K_D2, D3>; N],
-        biases: &Tensor3<T, D1, D2, N>,
-    ) -> Tensor3<T, D1, D2, N>
+        kernels: &[Tensor3<f64, K_D1, K_D2, D3>; N],
+        biases: &Tensor3<f64, D1, D2, N>,
+        fft_planner: &mut FftPlanner<f64>,
+    ) -> Tensor3<f64, D1, D2, N>
     where
-        T: AddAssign + MulAssign + Add<Output = T> + PartialOrd,
+        // input tensors
         [(); D1 * D2 * D3]: ,
         [(); K_D1 * K_D2 * D3]: ,
+        // intermediate channel tensors
+        [(); D1 * D2 * 1]: ,
+        [(); K_D1 * K_D2 * 1]: ,
+        // convolution intermediate tensor
+        [(); fft_l(D1, K_D1) * fft_l(D2, K_D2)]: ,
+        // output tensor
         [(); D1 * D2 * N]: ,
     {
-        let conv_out = kernels.map(|kernel| self.convolve_with_pad(kernel).get_data());
-        let mut data = [T::default(); D1 * D2 * N];
+        let conv_out = kernels.map(|kernel| {
+            let mut res = Tensor3::<_, D1, D2, 1>::default();
+            // Convolve with pad per channel.
+            for channel in 0..D3 {
+                let slice: Tensor2<_, D1, D2> = self.slice::<D1, D2, 1>(0, 0, channel).squeeze();
+                let kernel_slice: Tensor2<_, K_D1, K_D2> =
+                    kernel.slice::<K_D1, K_D2, 1>(0, 0, channel).squeeze();
+                res += &slice
+                    .convolve_fft(kernel_slice, fft_planner)
+                    .finish(fft_planner)
+                    .slice::<D1, D2>((K_D1 - 1) / 2, (K_D2 - 1) / 2)
+                    .unsqueeze();
+            }
+            res.get_data()
+        });
+        let mut data = [0.; D1 * D2 * N];
         for (elem, var) in data.iter_mut().zip(IntoIter::new(conv_out).flatten()) {
             *elem = var;
         }
@@ -127,11 +148,12 @@ mod benches {
     #[bench]
     fn conv_pass(ben: &mut Bencher) {
         let distr = rand_distr::Uniform::<f64>::new(-1., 1.);
+        let mut fft_planner = FftPlanner::new();
         with_larger_stack(move || {
             let a = Tensor3::<_, 5, 5, 64>::rand(distr);
             let kernels = [(); 64].map(|()| Tensor3::<_, 3, 3, 64>::rand(distr));
             let biases = Tensor3::rand(distr);
-            ben.iter(|| a.convolution_pass(&kernels, &biases));
+            ben.iter(|| a.convolution_pass(&kernels, &biases, &mut fft_planner));
         })
     }
 

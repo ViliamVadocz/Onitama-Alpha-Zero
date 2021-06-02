@@ -12,12 +12,14 @@ mod default;
 mod display;
 mod elementwise;
 mod ml;
+mod shape;
 mod slice;
 mod tensor;
 
 #[cfg(feature = "rand")]
 mod random;
 
+pub use rustfft::FftPlanner;
 #[cfg(feature = "rand")]
 pub use {crate::random::RandomTensor, rand::distributions as rand_distr};
 
