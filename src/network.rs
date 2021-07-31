@@ -1,8 +1,9 @@
 use std::fs;
+use std::sync::Arc;
 
 use tensor::*;
 
-const LEARNING_RATE: f64 = 0.001;
+const LEARNING_RATE: f64 = 0.0001;
 const NETWORK_SIZE: usize = 3 * 3 * 8 * 64
     + 5 * 5 * 64
     + 3 * 3 * 64 * 64
@@ -16,8 +17,9 @@ const NETWORK_SIZE: usize = 3 * 3 * 8 * 64
     + 800 * 626
     + 626;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone)]
 pub struct Network {
+    fft_planner: Arc<FftPlanner<f64>>,
     // Padded convolution layers.
     l1_kernels: [Tensor3<f64, 3, 3, 8>; 64],
     l1_biases: Tensor3<f64, 5, 5, 64>,
@@ -41,6 +43,7 @@ impl Network {
     pub fn init() -> Network {
         let distr = rand_distr::Standard;
         Network {
+            fft_planner: Arc::new(FftPlanner::new()),
             // Padded convolution layers.
             l1_kernels: [(); 64].map(|()| Tensor3::rand(distr)),
             l1_biases: Tensor3::rand(distr),
@@ -60,13 +63,13 @@ impl Network {
 
     pub fn feed_forward(&self, input: Tensor3<f64, 5, 5, 8>) -> (Tensor1<f64, 625>, f64) {
         let (vec, board_eval) = input
-            .convolution_pass(&self.l1_kernels, &self.l1_biases)
+            .convolution_pass(&self.l1_kernels, &self.l1_biases, &mut self.fft_planner)
             .map(relu)
-            .convolution_pass(&self.l2_kernels, &self.l2_biases)
+            .convolution_pass(&self.l2_kernels, &self.l2_biases, &mut self.fft_planner)
             .map(relu)
-            .convolution_pass(&self.l3_kernels, &self.l3_biases)
+            .convolution_pass(&self.l3_kernels, &self.l3_biases, &mut self.fft_planner)
             .map(relu)
-            .convolution_pass(&self.l4_kernels, &self.l4_biases)
+            .convolution_pass(&self.l4_kernels, &self.l4_biases, &mut self.fft_planner)
             .map(relu)
             .reshape::<Tensor1<_, 1600>>()
             .fully_connected_pass(&self.l5_weights, &self.l5_biases)
@@ -95,13 +98,13 @@ impl Network {
         // Feed-forward while keeping track of intermediate values.
         // x is pre-activation.
         // a is activation.
-        let l1_x = input.convolution_pass(&self.l1_kernels, &self.l1_biases);
+        let l1_x = input.convolution_pass(&self.l1_kernels, &self.l1_biases, &mut self.fft_planner);
         let l1_a = l1_x.map(relu);
-        let l2_x = l1_a.convolution_pass(&self.l2_kernels, &self.l2_biases);
+        let l2_x = l1_a.convolution_pass(&self.l2_kernels, &self.l2_biases, &mut self.fft_planner);
         let l2_a = l2_x.map(relu);
-        let l3_x = l2_a.convolution_pass(&self.l3_kernels, &self.l3_biases);
+        let l3_x = l2_a.convolution_pass(&self.l3_kernels, &self.l3_biases, &mut self.fft_planner);
         let l3_a = l3_x.map(relu);
-        let l4_x = l3_a.convolution_pass(&self.l4_kernels, &self.l4_biases);
+        let l4_x = l3_a.convolution_pass(&self.l4_kernels, &self.l4_biases, &mut self.fft_planner);
         let l4_a = l4_x.map(relu).reshape::<Tensor1<_, 1600>>();
         let l5_x = l4_a.fully_connected_pass(&self.l5_weights, &self.l5_biases);
         let l5_a = l5_x.map(relu);
@@ -120,7 +123,7 @@ impl Network {
         // Combine dl_do and dl_db.
         let dL_dx = {
             let mut data = [0.; 626];
-            for (elem, val) in data.iter_mut().zip(dL_do.iter()) {
+            for (elem, val) in data.iter_mut().zip(dL_do.into_iter()) {
                 *elem = val;
             }
             data[625] = dL_db;
@@ -196,7 +199,7 @@ where
         [(); 64].map(|()| {
             let i = iter.next().unwrap();
             prev_activations
-                .convolve_with_pad_to(&next_layer_derivatives.slice::<5, 5, 1>(0, 0, i))
+                .convolve_with_pad_to(next_layer_derivatives.slice::<5, 5, 1>(0, 0, i))
                 .scale(LEARNING_RATE)
         })
     };
@@ -205,7 +208,7 @@ where
         for (i, &kernel) in kernels.iter().enumerate() {
             res += &kernel
                 .rev()
-                .convolve_with_pad_to(&next_layer_derivatives.slice::<5, 5, 1>(0, 0, i))
+                .convolve_with_pad_to(next_layer_derivatives.slice::<5, 5, 1>(0, 0, i))
                 .rev();
         }
         res
@@ -257,6 +260,7 @@ impl Network {
         assert_eq!(data.len(), NETWORK_SIZE);
         let mut iter = data.into_iter();
         Network {
+            fft_planner: Arc::new(FftPlanner::new()),
             // Padded convolution layers.
             l1_kernels: [(); 64].map(|()| Tensor3::new([(); 3 * 3 * 8].map(|()| iter.next().unwrap()))),
             l1_biases: Tensor3::new([(); 5 * 5 * 64].map(|()| iter.next().unwrap())),
@@ -296,7 +300,18 @@ mod tests {
             orig.save("test.data");
             let network = Network::load("test.data");
             fs::remove_file("test.data").unwrap();
-            assert_eq!(orig, network);
+            assert_eq!(orig.l1_kernels, network.l1_kernels);
+            assert_eq!(orig.l1_biases, network.l1_biases);
+            assert_eq!(orig.l2_kernels, network.l2_kernels);
+            assert_eq!(orig.l2_biases, network.l2_biases);
+            assert_eq!(orig.l3_kernels, network.l3_kernels);
+            assert_eq!(orig.l3_biases, network.l3_biases);
+            assert_eq!(orig.l4_kernels, network.l4_kernels);
+            assert_eq!(orig.l4_biases, network.l4_biases);
+            assert_eq!(orig.l5_weights, network.l5_weights);
+            assert_eq!(orig.l5_biases, network.l5_biases);
+            assert_eq!(orig.l6_weights, network.l6_weights);
+            assert_eq!(orig.l6_biases, network.l6_biases);
         })
     }
 }

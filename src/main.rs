@@ -1,7 +1,6 @@
 #![feature(
     const_generics,
     const_evaluatable_checked,
-    array_map,
     thread_spawn_unchecked,
     entry_insert
 )]

@@ -281,6 +281,30 @@ mod tests {
         let fft = a.convolve_fft(kernel, &mut fft_planner).finish(&mut fft_planner);
         assert!((naive - &fft).map(f64::abs).sum() < 1e-9);
     }
+
+    #[test]
+    fn multiple_pass() {
+        let a = Tensor1::new([1., 2., 3., 4., 5., 6.]);
+        let b = Tensor1::new([0.5, 1., -0.5]);
+        let c = Tensor1::new([1., -2.5, 0.5]);
+
+        println!("{}", a.convolve_with_pad(b).convolve_with_pad(c));
+
+        let mut fft_planner = FftPlanner::new();
+        // println!("{:.2}", a.convolve_fft(b, &mut fft_planner).next_convolve(c, &mut
+        // fft_planner).finish(&mut fft_planner));
+
+        let a = Tensor3::<f64, 5, 5, 32>::rand(rand_distr::Uniform::new(-1., 1.));
+        let b = Tensor3::<f64, 3, 3, 32>::rand(rand_distr::Uniform::new(-1., 1.));
+
+        println!("{:.2}", a.convolve_with_pad_to::<3, 3, 32, 5, 5, 1>(b));
+        println!(
+            "{:.2}",
+            a.convolve_fft(b, &mut fft_planner)
+                .finish(&mut fft_planner)
+                .slice::<5, 5, 1>(1, 1, 31)
+        );
+    }
 }
 
 #[cfg(test)]

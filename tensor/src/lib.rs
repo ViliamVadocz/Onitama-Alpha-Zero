@@ -1,4 +1,4 @@
-#![feature(const_generics, const_evaluatable_checked, array_map, thread_spawn_unchecked)]
+#![feature(const_generics, const_evaluatable_checked, thread_spawn_unchecked)]
 #![allow(incomplete_features)]
 #![feature(test)]
 extern crate test;
